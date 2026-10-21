@@ -207,9 +207,30 @@ export const birthdayContent: BirthdayContent = {
   },
 
   finalSurprise: {
-    heading: "Until I can hold you again",
-    message:
-      "No matter how many miles are between us, you will always have a special place in my heart. Happy Birthday, Snehuu. Forever yours, Nikhil ❤️.",
+    heading: "💗 For the Girl Who Owns My Heart",
+    message: `Happy Birthday Meri Sneha, Meri Biwi ❤️🥹🫶🏻
+
+Bohat Bohat Bohat Khush hoon main aaj! I love you soo much, meri jaan. Meri Biwi ki birthday hai aaj, aur har baar main yahi chahunga ki main tumhare liye kuch special kar paaun, tumhe apni zindagi bhar khush rakh paaun. 🥹❤️
+
+Pata hai jaan, mere liye aaj ka din kitna special hai? Kyunki aaj ke din meri duniya mein woh insaan aaya tha, jo aaj meri poori duniya hai. 🫶🏻 Tum sirf meri wife nahi ho, tum meri khushi ho, mera sukoon ho, meri favourite person ho, aur meri zindagi ka woh hissa ho jiske bina main apni life imagine bhi nahi kar sakta. 🥹💗
+
+Main nahi jaanta ki main tumhe har baar utni khushi de paata hoon ya nahi, jitni tum deserve karti ho, lekin ek baat dil se kehna chahta hoon — **main hamesha tumhe khush rakhne ki koshish karta rahunga.** Tumhari smile mere liye bohat precious hai, aur tumhari aankhon mein khushi dekhne ke liye main kuch bhi karna chahunga. 🥺❤️
+
+Kabhi-kabhi bura lagta hai ki main tumhare paas nahi hoon, tumhare birthday par tumhe hug nahi kar sakta, tumhara haath pakad kar tumhe wish nahi kar sakta, aur tumhare saath baith kar tumhara special day celebrate nahi kar sakta. 🥹💔 Lekin meri jaan, doori chahe kitni bhi ho, mera dil hamesha tumhare paas hi rehta hai. Kaash aaj main tumhare paas hota, tumhe apni baahon mein lekar bas itna kehta — *“Happy Birthday, meri jaan. Tum meri ho, aur main tumse bohat bohat bohat pyaar karta hoon.”* 🫂💗
+
+Meri Snehuu, main chahta hoon ki tumhari life mein jitni bhi khushiyan hain, woh sab tumhe milein. Tumhare saare dreams poore hon, tum hamesha smile karti raho, aur tumhe kabhi bhi aisa feel na ho ki tum akeli ho. Main tumhare saath hoon, jaan — tumhari khushi mein bhi, tumhare sad days mein bhi, aur tumhare har us moment mein jab tumhe meri zaroorat ho. ❤️🫶🏻
+
+Aur haan, meri Soan Papdi 🥺😘💗, tum jitna mujhe pareshan karti ho na, utna hi zyada pyaar bhi aata hai tum par. Tumhari chhoti-chhoti baatein, tumhara gussa, tumhara bachpana, tumhara pyaar — mujhe tumhari har ek cheez se pyaar hai. Main chahta hoon ki hum aise hi ek-doosre ko pareshan karte rahein, haste rahein, ladte rahein, phir ek-doosre ko manaate rahein, aur poori zindagi saath bitaayein. 🥹💋
+
+**Happy Birthday, Meri Biwi, Meri Jaan, Meri Snehuu!** 🎂❤️
+
+I love you more than I can ever explain in words. Thank you meri life mein aane ke liye, mujhe itna pyaar dene ke liye, aur meri duniya ko itna beautiful banaane ke liye. Main bas yahi chahta hoon ki aane wale har birthday par main tumhare saath rahoon, tumhe apne haathon se cake khilaaun, tumhe hug karoon, aur tumhare chehre par woh beautiful smile dekh saakuu. 🥹🫂❤️
+
+**Tum meri aaj ki khushi ho, meri kal ki umeed ho, aur meri poori zindagi ka sabse pyaara hissa ho.** 🫶🏻💍
+
+I LOVE YOU SOOO MUCH, MERI BIWI. HAPPY BIRTHDAY, MERI SNEHUUU! ❤️🎀💋🧿
+💋😘😚😚😚😚Aur Bohat Sara Kissi Aapkoo😚😚😚😚😚😚😚😚😚😚😚💝💝💖💕💕😍💋💋😘😚😚😚😚
+ Snehuu. Forever yours, Nikhil ❤️.`,
     signature: "Forever yours, Nikhil ❤️",
   },
 

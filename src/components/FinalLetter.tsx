@@ -11,6 +11,27 @@ export const FinalLetter: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} className="font-bold text-[#75445C]">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return (
+          <em key={index} className="italic text-[#75445C]">
+            {part.slice(1, -1)}
+          </em>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <section
       id="final-letter"
@@ -90,8 +111,12 @@ export const FinalLetter: React.FC = () => {
               </div>
 
               {/* Message */}
-              <div className="font-serif text-lg sm:text-xl leading-relaxed text-[#33222B] italic">
-                "{finalSurprise.message}"
+              <div className="space-y-4 font-serif text-base sm:text-lg leading-relaxed text-[#33222B]">
+                {finalSurprise.message.split('\n\n').map((paragraph, idx) => (
+                  <p key={idx} className="whitespace-pre-line">
+                    {renderFormattedText(paragraph)}
+                  </p>
+                ))}
               </div>
 
               {/* Romantic Signature */}
