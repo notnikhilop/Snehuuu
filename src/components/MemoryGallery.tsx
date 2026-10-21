@@ -80,7 +80,7 @@ export const MemoryGallery: React.FC = () => {
                 className="relative bg-white p-3.5 pb-5 rounded-xl shadow-md hover:shadow-2xl border border-[#F7C8D9]/70 cursor-pointer transition-all duration-300 group"
               >
                 {/* Photo frame */}
-                <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden rounded-lg bg-[#FCE7F0]/30 mb-3">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-[#FCE7F0]/30 mb-3">
                   <img
                     src={item.image}
                     alt={item.caption}
