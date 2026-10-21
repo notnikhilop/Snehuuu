@@ -9,6 +9,27 @@ export const BirthdayWish: React.FC = () => {
   const [candlesLit, setCandlesLit] = useState<[boolean, boolean, boolean]>([true, true, true]);
   const [hasCelebrated, setHasCelebrated] = useState(false);
 
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} className="font-bold text-[#75445C]">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return (
+          <em key={index} className="italic text-[#75445C]">
+            {part.slice(1, -1)}
+          </em>
+        );
+      }
+      return part;
+    });
+  };
+
   const triggerCelebration = () => {
     setCandlesLit([false, false, false]);
     setHasCelebrated(true);
@@ -114,9 +135,13 @@ export const BirthdayWish: React.FC = () => {
             <span className="text-xs text-[#75445C] font-medium">October 23</span>
           </div>
 
-          <p className="text-base sm:text-lg text-[#33222B] font-serif leading-relaxed italic">
-            "{birthdayWish.message}"
-          </p>
+          <div className="space-y-4 font-serif text-base sm:text-lg leading-relaxed text-[#33222B]">
+            {birthdayWish.message.split('\n\n').map((paragraph, idx) => (
+              <p key={idx} className="whitespace-pre-line">
+                {renderFormattedText(paragraph)}
+              </p>
+            ))}
+          </div>
 
           <div className="mt-6 pt-4 border-t border-[#F7C8D9]/50 flex items-center justify-between">
             <div className="flex items-center gap-2">

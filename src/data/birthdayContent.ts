@@ -81,8 +81,19 @@ export const birthdayContent: BirthdayContent = {
 
   birthdayWish: {
     heading: "Happy Birthday, My Snehuu!",
-    message:
-      "Happy Birthday to the most wonderful part of my life, my dearest Sneha. Every single day, your smile lights up my world, and hearing your laugh brings me a sense of peace that words can hardly describe. Even with the miles between us right now, my love for you only grows deeper, stronger, and more certain with every sunrise. You are my Forever Wife, my warmth, and my forever home. May this year bring you all the gentle joy, big dreams, and pure happiness that your kind heart gives to everyone around you. Happy Birthday, my beautiful wife.",
+    message: `Happy Birthday to my beautiful Sneha, my Biwi, my Jaan. ❤️🎂
+
+You know, jaan, you are one of the most beautiful things that has ever happened to me. Your smile makes my day better, your happiness means everything to me, and just knowing that you are a part of my life makes me feel so lucky. 🥹🫶🏻
+
+Even though we're miles apart right now, you are always close to my heart. I wish I could be there with you today, hug you tightly, kiss your forehead, Aur Lips V💋🤤, and remind you again and again how much you mean to me. ❤️🫂
+
+You are not just my wife; you are my happiness, my comfort, my favourite person, and the one I want beside me through every chapter of life. I hope this birthday brings you countless reasons to smile, makes your dreams come true, and gives you all the happiness you deserve.
+
+And meri Snehuu, no matter how much time passes or how life changes, I will always wish to see you happy, keep that beautiful smile on your face, and make you feel loved in every possible way. 🥹💗
+
+**Happy Birthday, Meri Biwi, Meri Jaan, Meri Forever Person.** 💍❤️
+
+I love you more than these words could ever explain. Today, tomorrow, and in every tomorrow that comes after. 🎀🧿💋`,
     signature: "Forever yours, Nikhil ❤️",
     playfulNickname: "My favourite Soan papdi ♡",
   },
