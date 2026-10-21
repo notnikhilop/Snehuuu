@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Disc3 } from 'lucide-react';
 import { birthdayContent } from '../data/birthdayContent';
@@ -6,32 +6,10 @@ import { useAudioCoordinator } from '../context/AudioCoordinator';
 
 export const MusicPlayer: React.FC = () => {
   const { theme } = birthdayContent;
-  const { isMusicPlaying, toggleMusic, isVoicePlaying, isVideoPlaying } = useAudioCoordinator();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Sync native audio element if local audio path is provided
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isMusicPlaying && !isVoicePlaying && !isVideoPlaying) {
-        audioRef.current.play().catch(() => {
-          // Handled gracefully by AudioCoordinator's built-in synth
-        });
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isMusicPlaying, isVoicePlaying, isVideoPlaying]);
+  const { isMusicPlaying, toggleMusic } = useAudioCoordinator();
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none">
-      {/* Hidden audio element pointing to optional local music file */}
-      <audio
-        ref={audioRef}
-        src="/audio/love-story.mp3"
-        loop
-        preload="none"
-      />
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

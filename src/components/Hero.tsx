@@ -10,11 +10,11 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
-  const { recipient, theme } = birthdayContent;
+  const { recipient, hero } = birthdayContent;
 
-  const scrollToNext = () => {
+  const scrollToWish = () => {
     onOpenSurprise();
-    const el = document.getElementById('letter-section');
+    const el = document.getElementById('birthday-wish');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
@@ -48,25 +48,25 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
       <IridescentRibbon side="left" />
       <IridescentRibbon side="right" />
 
-      {/* Top Editorial Pills (Inspired by reference's top badges) */}
+      {/* Top Editorial Pills */}
       <motion.div
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.1 }}
         className="z-20 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 px-4 mb-2 max-w-2xl text-center"
       >
-        <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold text-[#D982A5] tracking-wide border border-white/70">
-          {birthdayContent.opening.chapter}
-        </span>
-        <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70">
+        <span className="glass-pill px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold text-[#D982A5] tracking-wide border border-white/70">
           October 23
         </span>
-        <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70 flex items-center gap-1">
+        <span className="glass-pill px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70 flex items-center gap-1">
           <Heart className="w-2.5 h-2.5 text-[#D982A5] fill-[#D982A5]" />
-          {theme.title}
+          Happy Birthday
         </span>
-        <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70 hidden sm:inline-block">
+        <span className="glass-pill px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70 hidden sm:inline-block">
           {recipient.displayName}
+        </span>
+        <span className="glass-pill px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70">
+          With Love, Nikhil
         </span>
       </motion.div>
 
@@ -86,7 +86,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
               textShadow: '0 10px 40px rgba(117, 68, 92, 0.06)',
             }}
           >
-            SNEHUU
+            {hero.title}
           </motion.h1>
 
           {/* Floating Translucent Glass Heart layered directly in front of the typography */}
@@ -104,23 +104,23 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
         transition={{ duration: 0.8, delay: 0.35 }}
         className="z-20 flex flex-col items-center text-center px-4 gap-4 mt-2 sm:mt-4 max-w-lg mx-auto"
       >
-        <p className="text-sm sm:text-base font-medium text-[#75445C] tracking-normal leading-relaxed">
-          "{birthdayContent.opening.message}"
+        <p className="text-sm sm:text-base md:text-lg font-medium text-[#75445C] tracking-normal">
+          {hero.subtitle}
         </p>
 
         {/* Small rounded black button with white text */}
         <button
-          onClick={scrollToNext}
+          onClick={scrollToWish}
           className="group relative inline-flex items-center gap-2 px-8 py-3 bg-[#0A0709] hover:bg-[#20151C] text-white rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D982A5] focus:ring-offset-2"
         >
-          <span>{birthdayContent.opening.buttonText}</span>
+          <span>{hero.buttonText}</span>
           <span className="text-[#F7C8D9] group-hover:translate-x-0.5 transition-transform duration-200">
             ♡
           </span>
         </button>
 
         <p className="text-[11px] text-[#75445C]/60 tracking-wider font-light">
-          Scroll down to discover your birthday chapters ↓
+          Scroll down to see your birthday surprise ↓
         </p>
       </motion.div>
     </section>

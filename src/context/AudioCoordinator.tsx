@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 
 interface AudioContextType {
   isMusicPlaying: boolean;
@@ -7,8 +7,8 @@ interface AudioContextType {
   pauseMusic: () => void;
   isVoicePlaying: boolean;
   setVoicePlaying: (playing: boolean) => void;
-  isVideoPlaying: boolean;
-  setVideoPlaying: (playing: boolean) => void;
+  isVideoSoundActive: boolean;
+  setVideoSoundActive: (active: boolean) => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -16,24 +16,25 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [isVoicePlaying, setIsVoicePlaying] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  
-  // Audio synthesizer fallback for romantic background melody
+  const [isVideoSoundActive, setIsVideoSoundActive] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorIntervalRef = useRef<number | null>(null);
 
-  // Stop background music if voice message or video starts
+  // Stop background music if voice message or unmuted video plays
   useEffect(() => {
-    if (isVoicePlaying || isVideoPlaying) {
-      if (isMusicPlaying) {
-        setIsMusicPlaying(false);
+    if (isVoicePlaying || isVideoSoundActive) {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
       }
       stopSynthMelody();
+      setIsMusicPlaying(false);
     }
-  }, [isVoicePlaying, isVideoPlaying]);
+  }, [isVoicePlaying, isVideoSoundActive]);
 
   // Gentle romantic piano arpeggio synthesizer (royalty-free Web Audio fallback)
-  const startSynthMelody = () => {
+  const startSynthMelody = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
@@ -45,7 +46,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ctx.resume();
       }
 
-      // Romantic chord notes in Hz (Love Story inspired arpeggios: Dm - Gm - C - F - Bb - A)
       const notes = [
         293.66, 349.23, 440.0, 523.25, // Dm
         349.23, 440.0, 523.25, 587.33,
@@ -62,58 +62,112 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       oscillatorIntervalRef.current = window.setInterval(() => {
         if (!audioContextRef.current || audioContextRef.current.state === 'suspended') return;
-        
+
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        
+
         osc.type = 'sine';
         osc.frequency.setValueAtTime(notes[step % notes.length], ctx.currentTime);
-        
-        // Soft chime envelope
+
         gain.gain.setValueAtTime(0.001, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2);
-        
+
         osc.connect(gain);
         gain.connect(ctx.destination);
-        
+
         osc.start();
         osc.stop(ctx.currentTime + 1.25);
-        
+
         step++;
       }, 550);
     } catch {
-      // AudioContext not allowed or not supported
+      // Ignored if audio context not permitted
     }
-  };
+  }, []);
 
-  const stopSynthMelody = () => {
+  const stopSynthMelody = useCallback(() => {
     if (oscillatorIntervalRef.current) {
       clearInterval(oscillatorIntervalRef.current);
       oscillatorIntervalRef.current = null;
     }
-  };
+  }, []);
 
-  const toggleMusic = () => {
+  const playMusic = useCallback(() => {
+    setIsVoicePlaying(false);
+    setIsVideoSoundActive(false);
+    setIsMusicPlaying(true);
+
+    if (audioRef.current) {
+      audioRef.current.play().then(() => {
+        stopSynthMelody();
+      }).catch(() => {
+        // Fallback to synthesized melody
+        startSynthMelody();
+      });
+    } else {
+      startSynthMelody();
+    }
+  }, [startSynthMelody, stopSynthMelody]);
+
+  const pauseMusic = useCallback(() => {
+    setIsMusicPlaying(false);
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+    }
+    stopSynthMelody();
+  }, [stopSynthMelody]);
+
+  const toggleMusic = useCallback(() => {
     if (isMusicPlaying) {
       pauseMusic();
     } else {
       playMusic();
     }
-  };
+  }, [isMusicPlaying, pauseMusic, playMusic]);
 
-  const playMusic = () => {
-    // If voice or video is playing, stop them first
-    setIsVoicePlaying(false);
-    setIsVideoPlaying(false);
-    setIsMusicPlaying(true);
-    startSynthMelody();
-  };
+  // Attempt autoplay on mount; if blocked by browser, start on first user interaction
+  useEffect(() => {
+    // Create audio element for love-story.mp3
+    const audio = new Audio('/audio/love-story.mp3');
+    audio.loop = true;
+    audioRef.current = audio;
 
-  const pauseMusic = () => {
-    setIsMusicPlaying(false);
-    stopSynthMelody();
-  };
+    let hasInteracted = false;
+    const triggerAudioOnFirstInteraction = () => {
+      if (hasInteracted) return;
+      hasInteracted = true;
+      playMusic();
+      cleanupListeners();
+    };
+
+    const cleanupListeners = () => {
+      window.removeEventListener('pointerdown', triggerAudioOnFirstInteraction);
+      window.removeEventListener('touchstart', triggerAudioOnFirstInteraction);
+      window.removeEventListener('keydown', triggerAudioOnFirstInteraction);
+      window.removeEventListener('scroll', triggerAudioOnFirstInteraction);
+    };
+
+    // Try initial autoplay
+    audio.play().then(() => {
+      setIsMusicPlaying(true);
+    }).catch(() => {
+      // Autoplay blocked by browser policy without user gesture
+      window.addEventListener('pointerdown', triggerAudioOnFirstInteraction, { once: true });
+      window.addEventListener('touchstart', triggerAudioOnFirstInteraction, { once: true });
+      window.addEventListener('keydown', triggerAudioOnFirstInteraction, { once: true });
+      window.addEventListener('scroll', triggerAudioOnFirstInteraction, { once: true });
+    });
+
+    return () => {
+      cleanupListeners();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+      stopSynthMelody();
+    };
+  }, [playMusic, stopSynthMelody]);
 
   return (
     <AudioContext.Provider
@@ -127,13 +181,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setIsVoicePlaying(playing);
           if (playing) {
             pauseMusic();
-            setIsVideoPlaying(false);
+            setIsVideoSoundActive(false);
           }
         },
-        isVideoPlaying,
-        setVideoPlaying: (playing: boolean) => {
-          setIsVideoPlaying(playing);
-          if (playing) {
+        isVideoSoundActive,
+        setVideoSoundActive: (active: boolean) => {
+          setIsVideoSoundActive(active);
+          if (active) {
             pauseMusic();
             setIsVoicePlaying(false);
           }

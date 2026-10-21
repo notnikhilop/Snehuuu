@@ -4,7 +4,7 @@ import { Heart, Sparkles, ArrowUp, Star } from 'lucide-react';
 import { birthdayContent } from '../data/birthdayContent';
 
 export const FinalLetter: React.FC = () => {
-  const { finalLetter, recipient } = birthdayContent;
+  const { finalSurprise, recipient } = birthdayContent;
   const [isRevealed, setIsRevealed] = useState(false);
 
   const scrollToTop = () => {
@@ -35,13 +35,13 @@ export const FinalLetter: React.FC = () => {
 
       <div className="max-w-2xl w-full mx-auto relative z-10 flex flex-col items-center">
         
-        {/* Subtle romantic badge */}
+        {/* Romantic badge */}
         <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#F7C8D9] text-xs font-semibold uppercase tracking-wider mb-4">
-          <Star className="w-3.5 h-3.5 fill-[#F7C8D9]" /> {finalLetter.chapter}
+          <Star className="w-3.5 h-3.5 fill-[#F7C8D9]" /> Final Surprise
         </div>
 
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-center text-white tracking-tight mb-4">
-          {finalLetter.heading}
+          {finalSurprise.heading}
         </h2>
 
         <p className="text-sm sm:text-base text-[#F7C8D9]/90 text-center max-w-lg mb-8 font-light">
@@ -62,13 +62,13 @@ export const FinalLetter: React.FC = () => {
                 <Heart className="w-8 h-8 fill-white animate-pulse" />
               </div>
               <h3 className="text-xl sm:text-2xl font-serif font-bold text-white mb-1">
-                A Letter for {recipient.displayName}
+                For {recipient.displayName}
               </h3>
               <p className="text-xs text-[#F7C8D9] font-medium tracking-wider uppercase mt-1">
-                October 23 • From Nikhil with all his heart
+                October 23 • Forever Yours
               </p>
               <span className="mt-6 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-semibold tracking-wide border border-white/30 transition-all">
-                <Sparkles className="w-3.5 h-3.5" /> Tap to open final letter
+                <Sparkles className="w-3.5 h-3.5" /> Tap to open final message
               </span>
             </motion.div>
           ) : (
@@ -84,22 +84,20 @@ export const FinalLetter: React.FC = () => {
                   <span className="text-xs font-bold text-[#D982A5] uppercase tracking-widest">
                     Eternal Promise
                   </span>
-                  <p className="text-xs text-[#75445C] mt-0.5">Written across the miles</p>
+                  <p className="text-xs text-[#75445C] mt-0.5">October 23</p>
                 </div>
                 <Heart className="w-6 h-6 text-[#D982A5] fill-[#D982A5]" />
               </div>
 
               {/* Message */}
-              <div className="space-y-4 font-serif text-base sm:text-lg leading-relaxed text-[#33222B]">
-                {finalLetter.message.split('\n\n').map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
+              <div className="font-serif text-lg sm:text-xl leading-relaxed text-[#33222B] italic">
+                "{finalSurprise.message}"
               </div>
 
               {/* Romantic Signature */}
               <div className="mt-10 pt-6 border-t border-[#F7C8D9]/60 flex flex-col items-end">
-                <p className="text-2xl sm:text-3xl font-script text-[#75445C] mt-1 whitespace-pre-line text-right">
-                  {finalLetter.signature}
+                <p className="text-2xl sm:text-3xl font-script text-[#75445C] mt-1 text-right">
+                  {finalSurprise.signature}
                 </p>
               </div>
             </motion.div>
@@ -112,11 +110,11 @@ export const FinalLetter: React.FC = () => {
             onClick={scrollToTop}
             className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/25 text-white text-xs sm:text-sm font-semibold tracking-wide backdrop-blur-md transition-all cursor-pointer group"
           >
-            <span>Relive the magic from the start</span>
+            <span>Back to top</span>
             <ArrowUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
           </button>
           <p className="text-[11px] text-[#F7C8D9]/60 mt-3 font-light text-center">
-            Made with endless love by Nikhil for Snehuu ♡ Happy Birthday, Jaan!
+            Made with love by Nikhil for Snehuu ♡ Happy Birthday, Jaan!
           </p>
         </div>
 

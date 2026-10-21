@@ -5,7 +5,7 @@ import { birthdayContent } from '../data/birthdayContent';
 import { useAudioCoordinator } from '../context/AudioCoordinator';
 
 export const VoiceMessage: React.FC = () => {
-  const { media, recipient } = birthdayContent;
+  const { voiceMessage, recipient } = birthdayContent;
   const { isVoicePlaying, setVoicePlaying } = useAudioCoordinator();
 
   const [currentTime, setCurrentTime] = useState(0);
@@ -80,13 +80,13 @@ export const VoiceMessage: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F7C8D9]/50 text-[#75445C] text-xs font-semibold uppercase tracking-wider mb-2">
-            <Mic className="w-3.5 h-3.5 text-[#D982A5]" /> {birthdayContent.voiceSection.chapter}
+            <Mic className="w-3.5 h-3.5 text-[#D982A5]" /> Voice Recording
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#2A1722] tracking-tight">
-            {birthdayContent.voiceSection.title}
+            {voiceMessage.title}
           </h2>
           <p className="text-sm sm:text-base text-[#75445C] mt-2 font-normal">
-            {birthdayContent.voiceSection.subtitle}
+            {voiceMessage.subtitle}
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export const VoiceMessage: React.FC = () => {
           {/* Hidden real audio element */}
           <audio
             ref={audioRef}
-            src={media.voiceMessage}
+            src={voiceMessage.audioSrc}
             onTimeUpdate={() => {
               if (audioRef.current) {
                 setCurrentTime(audioRef.current.currentTime);

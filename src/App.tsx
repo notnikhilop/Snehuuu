@@ -1,19 +1,17 @@
 import { AudioProvider } from './context/AudioCoordinator';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { LoveLetter } from './components/LoveLetter';
-import { StoryTimeline } from './components/StoryTimeline';
+import { BirthdayWish } from './components/BirthdayWish';
 import { MemoryGallery } from './components/MemoryGallery';
-import { ReasonsILoveYou } from './components/ReasonsILoveYou';
+import { LittleMoments } from './components/LittleMoments';
 import { VoiceMessage } from './components/VoiceMessage';
-import { BirthdayCake } from './components/BirthdayCake';
 import { FinalLetter } from './components/FinalLetter';
 import { MusicPlayer } from './components/MusicPlayer';
 import { NavigationProgress } from './components/NavigationProgress';
 
 export function App() {
   const handleOpenSurprise = () => {
-    const el = document.getElementById('letter-section');
+    const el = document.getElementById('birthday-wish');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
@@ -29,28 +27,22 @@ export function App() {
         <Navbar onOpenSurprise={handleOpenSurprise} />
 
         <main className="relative z-10">
-          {/* 1. Redesigned Hero Section */}
+          {/* 1. Hero Section (SNEHUU, 3D Glass Heart, Ribbons) */}
           <Hero onOpenSurprise={handleOpenSurprise} />
 
-          {/* 2. Personal Love Letter with Envelope animation */}
-          <LoveLetter />
+          {/* 2. Heartfelt Birthday Wish & Interactive Cake */}
+          <BirthdayWish />
 
-          {/* 3. Interactive Long-Distance Love-Story Timeline */}
-          <StoryTimeline />
-
-          {/* 4. Swipeable Memory Gallery with Fullscreen Lightbox */}
+          {/* 3. Our Memories Gallery (Main feature: 12 replaceable slots + full-screen viewer) */}
           <MemoryGallery />
 
-          {/* 5. Six Tap-to-Reveal Cards: "Little things I love about you" */}
-          <ReasonsILoveYou />
+          {/* 4. Little Moments (Short videos with viewport silent autoplay + mute toggle) */}
+          <LittleMoments />
 
-          {/* 6. Voice Message Section: "When you miss me" */}
+          {/* 5. A Message From Me (Voice Recording Player) */}
           <VoiceMessage />
 
-          {/* 7. Birthday Celebration & Interactive Cake with Candles & Confetti */}
-          <BirthdayCake />
-
-          {/* 8. Final Closing Letter & Stars */}
+          {/* 6. Final Surprise Closing Message */}
           <FinalLetter />
         </main>
 

@@ -48,29 +48,36 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSurprise }) => {
         </button>
 
         {/* Minimal Nav Links */}
-        <nav className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm font-medium text-[#75445C]">
+        <nav className="flex items-center gap-2.5 sm:gap-5 text-xs sm:text-sm font-medium text-[#75445C]">
           <button
-            onClick={() => scrollTo('story-timeline')}
+            onClick={() => scrollTo('birthday-wish')}
             className="hover:text-[#2A1722] transition-colors cursor-pointer py-1 px-2 rounded-full hover:bg-white/50"
           >
-            Our Story
+            Wish
           </button>
           
           <button
-            onClick={() => scrollTo('reasons-section')}
-            className="hidden md:inline-block hover:text-[#2A1722] transition-colors cursor-pointer py-1 px-2 rounded-full hover:bg-white/50"
+            onClick={() => scrollTo('memories-section')}
+            className="hover:text-[#2A1722] transition-colors cursor-pointer py-1 px-2 rounded-full hover:bg-white/50"
           >
-            Little Things
+            Memories
+          </button>
+
+          <button
+            onClick={() => scrollTo('videos-section')}
+            className="hidden sm:inline-block hover:text-[#2A1722] transition-colors cursor-pointer py-1 px-2 rounded-full hover:bg-white/50"
+          >
+            Moments
           </button>
 
           <button
             onClick={() => {
               onOpenSurprise();
-              scrollTo('birthday-celebration');
+              scrollTo('final-letter');
             }}
             className="flex items-center gap-1.5 bg-[#FCE7F0] hover:bg-[#F7C8D9] text-[#75445C] hover:text-[#2A1722] px-3 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium shadow-xs"
           >
-            <span>Birthday Surprise</span>
+            <span>Surprise</span>
             <span className="text-xs">↗</span>
           </button>
 
@@ -78,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSurprise }) => {
           <button
             onClick={toggleMusic}
             aria-label="Toggle background music"
-            title={isMusicPlaying ? 'Pause Indila - Love Story' : 'Play Indila - Love Story'}
+            title={isMusicPlaying ? 'Pause background music' : 'Play background music'}
             className="w-8 h-8 rounded-full flex items-center justify-center bg-white/70 hover:bg-white border border-[#F7C8D9] text-[#75445C] transition-all cursor-pointer shadow-xs"
           >
             {isMusicPlaying ? (

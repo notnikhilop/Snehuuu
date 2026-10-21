@@ -1,150 +1,96 @@
-# Project Snehuu 💗 — A Romantic Long-Distance Birthday Experience
+# Project Snehuu 💗 — Personal Birthday Experience
 
-An intimate, elegant, and interactive birthday website for **Mrs. Sneha Gupta Maurya** (*Snehuu*, *Jaan*, *Babby*, *Soan papdi*), crafted with love by **Nikhil** for her birthday on **October 23**.
+A romantic, intimate birthday website for **Mrs. Sneha Gupta Maurya** (*Snehuu*, *Jaan*, *Babby*, *Soan papdi*), crafted by **Nikhil** for her birthday on **October 23**.
 
-> *"Miles apart, but always close to my heart."*
+> *"My favourite person, my forever favourite ♡"*
 
 ---
 
 ## ✨ Features & Journey
 
-1. **Editorial Hero Section (Redesigned from Reference)**
-   - Oversized bold condensed typography: **`SNEHUU`** (70–85% desktop width).
-   - 3D-effect translucent pink glass heart with realistic specular highlights, refractions, floating motion, and subtle pulse.
-   - Iridescent, silky waves in white, pale pink, and light cyan emerging from both sides.
-   - Editorial tags: `October 23`, `Miles Apart, Close at Heart`, `Mrs. Sneha Gupta Maurya`, `Forever Yours`.
-   - Romantic subtitle: *"To my favourite person in the whole universe ♡"*.
-   - Minimal header with tiny heart logo and *"Open Your Surprise"* call to action.
+1. **Hero Section**
+   - Oversized, editorial typography **`SNEHUU`**.
+   - 3D translucent pink glass heart with realistic highlights, refractions, and floating pulse.
+   - Flowing iridescent ribbons and pastel gradient background.
+   - Subtitle: *"My favourite person, my forever favourite ♡"*.
+   - Call to action: *"A little surprise for you"*.
 
-2. **Personal Love Letter (`A letter across the miles`)**
-   - Sealed postal envelope with stamp and heart wax seal.
-   - Tap-to-unseal unfolding animation revealing a vintage parchment letter.
-   - Dedicated "Continue our story" transition button.
+2. **Birthday Wish**
+   - Beautiful, heartfelt birthday message celebrating Sneha on October 23 (~100 words, no fictional backstories).
+   - Interactive pastel cake with tap-to-blowout candles.
+   - Extinguish smoke puff, celebration chime, and confetti explosion (`canvas-confetti`).
+   - Playful nickname reveal: *"My favourite Soan papdi ♡"*.
 
-3. **Interactive Long-Distance Timeline (`Miles Apart, Close at Heart`)**
-   - Alternating desktop timeline and vertical mobile line with glowing heart nodes.
-   - Long-distance relationship connection stats (miles, endless calls, infinite love).
-   - Dedicated chapters with dates, memories, photos, and short video preview.
+3. **Our Memories (Main Attraction)**
+   - 12 replaceable photo slots with Polaroid framing and soft romantic drop shadows.
+   - Short, sweet captions.
+   - Full-screen photo viewer (Lightbox) with zoom and keyboard navigation (`Esc`, `ArrowLeft`, `ArrowRight`).
 
-4. **Polaroid Memory Gallery & Fullscreen Lightbox**
-   - Realistic Polaroid frames with subtle tilt angles, vintage tape, and captions.
-   - Fullscreen Photo Viewer (Lightbox) with zoom, keyboard navigation (Esc, Arrow keys), and previous/next controls.
+4. **Little Moments**
+   - 1–3 short video clips.
+   - **Silent viewport autoplay:** Videos autoplay silently when they enter the screen, and pause when scrolled past.
+   - Dedicated, clear **Mute / Unmute** toggle button on each video.
+   - Audio coordinator automatically pauses the background song whenever a video is unmuted!
 
-5. **"Little Things I Love About You" (Six Interactive Cards)**
-   - 6 tap-to-reveal cards with smooth 3D flip animation.
-   - Roman numeral badges and rose-gold card backs.
-   - Progress tracker showing unlocked secrets.
-
-6. **Voice Message Player ("When you miss me")**
-   - Intimate audio player with animated waveform bars.
+5. **A Message From Me**
+   - Intimate voice note player with animated waveform bars.
    - Real-time scrubber, play/pause, and restart controls.
-   - Automatic sound coordinator: pauses background music whenever voice memo is playing.
+   - Automatically pauses background music during playback.
 
-7. **Interactive Birthday Cake & Celebration**
-   - Pastel multi-tiered cake with 3 interactive glowing candles.
-   - Tap individual flames or click *"Blow Out Candles & Make A Wish 🎂"*.
-   - Extinguish smoke puff, celebratory Web Audio chime, and colorful confetti burst (`canvas-confetti`).
-   - Celebratory wish reveal with the playful nickname **"My favourite Soan papdi ♡"**.
-   - Option to relight candles to wish again.
-
-8. **Starry Final Letter & Closing ("Until I can hold you again")**
+6. **Final Surprise**
    - Starry night sky with twinkling particles.
-   - Sealed letter with personal closing message.
-   - Handwritten cursive signature: *"Your Nikhil, always ❤️"*.
-   - Replay button to smoothly return to the beginning.
+   - Closing love note:
+     > *"No matter how many miles are between us, you will always have a special place in my heart. Happy Birthday, Snehuu. Forever yours, Nikhil ❤️."*
 
-9. **Smart Music Player**
-   - Intended song: *"Love Story"* by Indila.
-   - Floating compact player with vinyl spinning animation.
-   - Built-in soothing ambient synthesizer fallback so music always plays even before local MP3 is added.
-   - Audio coordinator prevents music from overlapping with voice note or video clips.
+7. **Theme Song ("Love Story" by Indila)**
+   - Attempts to autoplay on page load.
+   - If browser blocks autoplay without prior interaction, starts automatically on the first tap/click/scroll!
+   - Floating compact music player with vinyl spin animation and visible toggle.
 
 ---
 
-## 🛠️ Tech Stack
+## 📁 Exact Folders for Your Media Files
 
-- **React 19** + **Vite 8** + **TypeScript**
-- **Tailwind CSS v4** + Custom Glassmorphism Utilities
-- **Framer Motion** for smooth, cinematic animations
-- **Lucide React** for minimal icons
-- **Canvas-Confetti** for lightweight birthday celebrations
-- **Web Audio API** for synthesized romantic melodies and celebration chimes
+All media files are stored locally in the `public/` directory:
 
----
+| Media Type | Exact Folder | Expected Filenames |
+|---|---|---|
+| **Photographs** (8–15 slots) | `public/images/` | `photo-01.webp` through `photo-12.webp` (or `.jpg` / `.png`) |
+| **Video Clips** (1–3 clips) | `public/videos/` | `video-01.mp4`, `video-02.mp4` |
+| **Voice Recording** | `public/audio/` | `voice-message.mp3` |
+| **Theme Song** | `public/audio/` | `love-story.mp3` |
 
-## 🚀 Getting Started
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Run Locally in Development Mode
-```bash
-npm run dev
-```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### 3. Build for Production
-```bash
-npm run build
-```
-The optimized static build will be generated in `dist/`.
+> **Tip on Image Formats:** If your photos are `.jpg` or `.png`, either rename them to `.webp` or update the file extensions in `src/data/birthdayContent.ts`.
 
 ---
 
-## 💌 How to Personalize Your Website
+## ✏️ How to Edit Text & Captions
 
-All text and configurations are centralized in a single file for easy maintenance:
+All text is kept in a single configuration file:
+👉 **`src/data/birthdayContent.ts`**
 
-### 1. Edit Messages & Details: `src/data/birthdayContent.ts`
-Open `src/data/birthdayContent.ts` to customize:
-- `recipient`: Sneha's names, nicknames, and birthday date.
-- `letter`: The main opening love letter and signature.
-- `memories`: Titles, dates, captions, and media paths for your timeline & gallery.
-- `reasonsILoveYou`: The 6 reasons revealed by the interactive cards.
-- `birthday`: The birthday message and playful nickname (*"My favourite Soan papdi ♡"*).
-- `finalLetter`: The closing letter.
-
-### 2. Add Your Photos
-Drop your photos into `public/images/`:
-- `photo-01.webp` (or `.jpg` / `.png` / `.svg`)
-- `photo-02.webp`
-- `photo-03.webp`
-- `photo-04.webp`
-- `photo-05.webp`
-- `photo-06.webp`
-
-> *Tip:* If using `.jpg` or `.png`, simply update the file extension in `src/data/birthdayContent.ts`.
-
-### 3. Add Your Videos
-Place short video clips (MP4 format recommended) in:
-- `public/videos/memory-01.mp4`
-
-### 4. Record Your Voice Message
-Record a sweet voice note (MP3 format) and place it at:
-- `public/audio/voice-message.mp3`
-
-### 5. Configure the Song ("Love Story" by Indila)
-Place your licensed MP3 at:
-- `public/audio/love-story.mp3`
-*(If no file is placed, the website automatically plays a soothing romantic piano arpeggio via the built-in Web Audio synthesizer).*
+In this file, you can edit:
+- `birthdayWish.message`: Your personal birthday wish.
+- `memories`: Captions and dates for each of the 12 photo slots.
+- `videos`: Titles and captions for your video memories.
+- `voiceMessage.title` & `subtitle`: Audio memo labels.
+- `finalSurprise.message`: Closing note.
 
 ---
 
-## 🌐 Deployment Instructions
+## 🚀 How to Redeploy the Updated Site to Vercel
 
-### Deploy to Vercel (Recommended)
-1. Push your repository to GitHub.
-2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
-3. Import your repository. Vercel automatically detects Vite.
-4. Click **"Deploy"**. Your site will be live with a secure HTTPS link in seconds!
+Whenever you add new photos, videos, or change messages:
 
-### Deploy to Netlify
-1. Run `npm run build`.
-2. Drag and drop the `dist/` folder into [app.netlify.com/drop](https://app.netlify.com/drop).
-
-### 🔒 Privacy Note
-Since this is a client-side static site, any public URL can be viewed by anyone with the link. If you prefer extra privacy:
-- Use password protection available on Vercel/Netlify Pro, or
-- Share the link exclusively with Snehuu!
+1. Open PowerShell or Command Prompt inside `d:\Antigravity\Snehuu`.
+2. Stage and commit your new files:
+   ```powershell
+   git add .
+   git commit -m "Update personal photos, videos and messages for Snehuu"
+   ```
+3. Push to your GitHub repository:
+   ```powershell
+   git push origin main
+   ```
+4. **Vercel will automatically detect your push and redeploy your live website in approximately 30 seconds!**
+   You can view the deployment progress on your [vercel.com](https://vercel.com) dashboard.
