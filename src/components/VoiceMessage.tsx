@@ -80,13 +80,13 @@ export const VoiceMessage: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F7C8D9]/50 text-[#75445C] text-xs font-semibold uppercase tracking-wider mb-2">
-            <Mic className="w-3.5 h-3.5 text-[#D982A5]" /> Personal Audio Memo
+            <Mic className="w-3.5 h-3.5 text-[#D982A5]" /> {birthdayContent.voiceSection.chapter}
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#2A1722] tracking-tight">
-            When You Miss Me
+            {birthdayContent.voiceSection.title}
           </h2>
           <p className="text-sm sm:text-base text-[#75445C] mt-2 font-normal">
-            Whenever the silence feels too heavy or the distance feels too far, press play and let my voice hold you close.
+            {birthdayContent.voiceSection.subtitle}
           </p>
         </div>
 

@@ -96,10 +96,10 @@ export const BirthdayCake: React.FC = () => {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F7C8D9]/60 text-[#75445C] text-xs font-semibold uppercase tracking-wider mb-2">
-            <Cake className="w-3.5 h-3.5 text-[#D982A5]" /> Make A Wish
+            <Cake className="w-3.5 h-3.5 text-[#D982A5]" /> {birthday.chapter}
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#2A1722] tracking-tight">
-            October 23 Celebration
+            {birthday.heading}
           </h2>
           <p className="text-sm sm:text-base text-[#75445C] mt-2 font-normal">
             {anyCandleLit

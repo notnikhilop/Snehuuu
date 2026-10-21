@@ -27,7 +27,7 @@ export const StoryTimeline: React.FC = () => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F7C8D9]/40 border border-[#F7C8D9] text-[#75445C] text-xs font-semibold uppercase tracking-wider mb-3"
           >
             <Compass className="w-3.5 h-3.5 text-[#D982A5]" />
-            Long Distance Journey
+            Chapter 3 — Our Little Universe
           </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 15 }}
@@ -36,7 +36,7 @@ export const StoryTimeline: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#2A1722] tracking-tight"
           >
-            Miles Apart, Close at Heart
+            Our Little Universe
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 15 }}
@@ -45,7 +45,7 @@ export const StoryTimeline: React.FC = () => {
             transition={{ delay: 0.2 }}
             className="text-sm sm:text-base text-[#75445C] mt-3 font-normal"
           >
-            Every chapter of our story has conquered miles, time zones, and boarding gates — only to prove that our hearts were always intertwined.
+            A scrapbook of our memories, photographs, and short video clips across the miles. Every moment with you is etched forever in my soul.
           </motion.p>
         </div>
 
@@ -121,6 +121,12 @@ export const StoryTimeline: React.FC = () => {
                       <p className="text-sm sm:text-base text-[#75445C] leading-relaxed">
                         {memory.caption}
                       </p>
+
+                      {memory.note && (
+                        <div className="mt-3 p-2.5 rounded-xl bg-[#FFF9F5] border border-[#F7C8D9]/60 text-xs text-[#75445C] font-script text-base">
+                          Personal note: {memory.note}
+                        </div>
+                      )}
 
                       {/* Optional Video Player if specified */}
                       {memory.video && (

@@ -37,7 +37,7 @@ export const FinalLetter: React.FC = () => {
         
         {/* Subtle romantic badge */}
         <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#F7C8D9] text-xs font-semibold uppercase tracking-wider mb-4">
-          <Star className="w-3.5 h-3.5 fill-[#F7C8D9]" /> One Last Thought
+          <Star className="w-3.5 h-3.5 fill-[#F7C8D9]" /> {finalLetter.chapter}
         </div>
 
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-center text-white tracking-tight mb-4">
@@ -98,8 +98,7 @@ export const FinalLetter: React.FC = () => {
 
               {/* Romantic Signature */}
               <div className="mt-10 pt-6 border-t border-[#F7C8D9]/60 flex flex-col items-end">
-                <p className="text-xs text-[#75445C] font-sans">Forever and always,</p>
-                <p className="text-3xl sm:text-4xl font-script text-[#75445C] mt-1">
+                <p className="text-2xl sm:text-3xl font-script text-[#75445C] mt-1 whitespace-pre-line text-right">
                   {finalLetter.signature}
                 </p>
               </div>

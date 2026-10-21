@@ -55,6 +55,9 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
         transition={{ duration: 0.9, delay: 0.1 }}
         className="z-20 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 px-4 mb-2 max-w-2xl text-center"
       >
+        <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold text-[#D982A5] tracking-wide border border-white/70">
+          {birthdayContent.opening.chapter}
+        </span>
         <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70">
           October 23
         </span>
@@ -64,9 +67,6 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
         </span>
         <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70 hidden sm:inline-block">
           {recipient.displayName}
-        </span>
-        <span className="glass-pill px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70">
-          Forever Yours
         </span>
       </motion.div>
 
@@ -102,18 +102,18 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.35 }}
-        className="z-20 flex flex-col items-center text-center px-4 gap-4 mt-2 sm:mt-4"
+        className="z-20 flex flex-col items-center text-center px-4 gap-4 mt-2 sm:mt-4 max-w-lg mx-auto"
       >
-        <p className="text-sm sm:text-base md:text-lg font-medium text-[#75445C] tracking-normal max-w-md">
-          To my favourite person in the whole universe <span className="text-[#D982A5] font-serif">♡</span>
+        <p className="text-sm sm:text-base font-medium text-[#75445C] tracking-normal leading-relaxed">
+          "{birthdayContent.opening.message}"
         </p>
 
         {/* Small rounded black button with white text */}
         <button
           onClick={scrollToNext}
-          className="group relative inline-flex items-center gap-2 px-7 py-3 bg-[#0A0709] hover:bg-[#20151C] text-white rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D982A5] focus:ring-offset-2"
+          className="group relative inline-flex items-center gap-2 px-8 py-3 bg-[#0A0709] hover:bg-[#20151C] text-white rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D982A5] focus:ring-offset-2"
         >
-          <span>Open Your Surprise</span>
+          <span>{birthdayContent.opening.buttonText}</span>
           <span className="text-[#F7C8D9] group-hover:translate-x-0.5 transition-transform duration-200">
             ♡
           </span>

@@ -28,7 +28,7 @@ export const LoveLetter: React.FC = () => {
         {/* Section header */}
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F7C8D9]/50 text-[#75445C] text-xs font-semibold uppercase tracking-wider mb-2">
-            <Mail className="w-3.5 h-3.5" /> For Your Eyes Only
+            <Mail className="w-3.5 h-3.5" /> {letter.chapter}
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#2A1722] tracking-tight">
             {letter.title}
