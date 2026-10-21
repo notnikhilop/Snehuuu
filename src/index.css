@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --romantic-blush: #FCE7F0;
+    --romantic-rose: #F7C8D9;
+    --romantic-dusty: #D982A5;
+    --romantic-ivory: #FFF9F5;
+    --romantic-mauve: #75445C;
+    --romantic-dark: #2A1722;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: var(--romantic-ivory);
+    color: var(--romantic-dark);
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-script {
+    font-family: 'Alex Brush', cursive;
+  }
+
+  .font-editorial {
+    font-family: 'Playfair Display', Impact, sans-serif;
+  }
+}
+
+/* Glassmorphism effects */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 20px 40px -15px rgba(217, 130, 165, 0.15), 0 0 15px 0 rgba(252, 231, 240, 0.4);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 15px rgba(117, 68, 92, 0.04);
+}
+
+.glass-heart-container {
+  perspective: 1000px;
+}
+
+/* Shimmer animation */
+@keyframes shimmerWave {
+  0% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.5deg) scale(1.02);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+}
+
+.animate-floating {
+  animation: shimmerWave 7s ease-in-out infinite;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 4s ease-in-out infinite;
+}
+
+@keyframes ribbonFloatLeft {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-10px, -12px) rotate(-1.5deg);
+  }
+}
+
+@keyframes ribbonFloatRight {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(10px, -10px) rotate(1.5deg);
+  }
+}
+
+.animate-ribbon-left {
+  animation: ribbonFloatLeft 10s ease-in-out infinite;
+}
+
+.animate-ribbon-right {
+  animation: ribbonFloatRight 11s ease-in-out infinite;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFF9F5;
+}
+::-webkit-scrollbar-thumb {
+  background: #F7C8D9;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D982A5;
+}
