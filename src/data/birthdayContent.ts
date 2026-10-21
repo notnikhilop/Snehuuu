@@ -82,7 +82,7 @@ export const birthdayContent: BirthdayContent = {
   birthdayWish: {
     heading: "Happy Birthday, My Snehuu!",
     message:
-      "Happy Birthday to the most wonderful part of my life, my dearest Sneha. Every single day, your smile lights up my world, and hearing your laugh brings me a sense of peace that words can hardly describe. Even with the miles between us right now, my love for you only grows deeper, stronger, and more certain with every sunrise. You are my best friend, my warmth, and my forever home. May this year bring you all the gentle joy, big dreams, and pure happiness that your kind heart gives to everyone around you. Happy Birthday, my beautiful wife.",
+      "Happy Birthday to the most wonderful part of my life, my dearest Sneha. Every single day, your smile lights up my world, and hearing your laugh brings me a sense of peace that words can hardly describe. Even with the miles between us right now, my love for you only grows deeper, stronger, and more certain with every sunrise. You are my Forever Wife, my warmth, and my forever home. May this year bring you all the gentle joy, big dreams, and pure happiness that your kind heart gives to everyone around you. Happy Birthday, my beautiful wife.",
     signature: "Forever yours, Nikhil ❤️",
     playfulNickname: "My favourite Soan papdi ♡",
   },
