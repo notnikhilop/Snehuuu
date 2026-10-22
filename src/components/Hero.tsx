@@ -56,7 +56,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSurprise }) => {
         className="z-20 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 px-4 mb-2 max-w-2xl text-center"
       >
         <span className="glass-pill px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold text-[#D982A5] tracking-wide border border-white/70">
-          October 23
+          {recipient.birthday}
         </span>
         <span className="glass-pill px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium text-[#75445C] tracking-wide border border-white/70 flex items-center gap-1">
           <Heart className="w-2.5 h-2.5 text-[#D982A5] fill-[#D982A5]" />

@@ -86,7 +86,7 @@ export const FinalLetter: React.FC = () => {
                 For {recipient.displayName}
               </h3>
               <p className="text-xs text-[#F7C8D9] font-medium tracking-wider uppercase mt-1">
-                October 23 • Forever Yours
+                {recipient.birthday} • Forever Yours
               </p>
               <span className="mt-6 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-semibold tracking-wide border border-white/30 transition-all">
                 <Sparkles className="w-3.5 h-3.5" /> Tap to open final message
@@ -105,7 +105,7 @@ export const FinalLetter: React.FC = () => {
                   <span className="text-xs font-bold text-[#D982A5] uppercase tracking-widest">
                     Eternal Promise
                   </span>
-                  <p className="text-xs text-[#75445C] mt-0.5">October 23</p>
+                  <p className="text-xs text-[#75445C] mt-0.5">{recipient.birthday}</p>
                 </div>
                 <Heart className="w-6 h-6 text-[#D982A5] fill-[#D982A5]" />
               </div>

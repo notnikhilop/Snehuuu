@@ -109,7 +109,7 @@ export const BirthdayWish: React.FC = () => {
         {/* Subtle Header Badge */}
         <div className="text-center max-w-2xl mx-auto mb-8">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#F7C8D9]/60 text-[#75445C] text-xs font-semibold uppercase tracking-wider mb-3">
-            <Cake className="w-3.5 h-3.5 text-[#D982A5]" /> October 23 • Snehuu's Special Day
+            <Cake className="w-3.5 h-3.5 text-[#D982A5]" /> {recipient.birthday} • Snehuu's Special Day
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#2A1722] tracking-tight">
             {birthdayWish.heading}
@@ -132,7 +132,7 @@ export const BirthdayWish: React.FC = () => {
             <span className="text-xs font-semibold text-[#D982A5] uppercase tracking-wider">
               From Nikhil's Heart
             </span>
-            <span className="text-xs text-[#75445C] font-medium">October 23</span>
+            <span className="text-xs text-[#75445C] font-medium">{recipient.birthday}</span>
           </div>
 
           <div className="space-y-4 font-serif text-base sm:text-lg leading-relaxed text-[#33222B]">
@@ -226,7 +226,7 @@ export const BirthdayWish: React.FC = () => {
             </div>
             <div className="flex items-center gap-3 pb-2 text-[#75445C]">
               <Heart className="w-3.5 h-3.5 fill-[#D982A5] text-[#D982A5]" />
-              <span className="text-xs font-bold uppercase tracking-widest">October 23</span>
+              <span className="text-xs font-bold uppercase tracking-widest">{recipient.birthday}</span>
               <Heart className="w-3.5 h-3.5 fill-[#D982A5] text-[#D982A5]" />
             </div>
           </div>

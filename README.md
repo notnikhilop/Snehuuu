@@ -1,6 +1,6 @@
 # Project Snehuu 💗 — Personal Birthday Experience
 
-A romantic, intimate birthday website for **Mrs. Sneha Gupta Maurya** (*Snehuu*, *Jaan*, *Babby*, *Soan papdi*), crafted by **Nikhil** for her birthday on **October 23**.
+A romantic, intimate birthday website for **Mrs. Sneha Gupta Maurya** (*Snehuu*, *Jaan*, *Babby*, *Soan papdi*), crafted by **Nikhil** for her birthday on **October 25**.
 
 > *"My favourite person, my forever favourite ♡"*
 
@@ -16,7 +16,7 @@ A romantic, intimate birthday website for **Mrs. Sneha Gupta Maurya** (*Snehuu*,
    - Call to action: *"A little surprise for you"*.
 
 2. **Birthday Wish**
-   - Beautiful, heartfelt birthday message celebrating Sneha on October 23 (~100 words, no fictional backstories).
+   - Beautiful, heartfelt birthday message celebrating Sneha on October 25 (~100 words, no fictional backstories).
    - Interactive pastel cake with tap-to-blowout candles.
    - Extinguish smoke puff, celebration chime, and confetti explosion (`canvas-confetti`).
    - Playful nickname reveal: *"My favourite Soan papdi ♡"*.

@@ -61,7 +61,7 @@ export const birthdayContent: BirthdayContent = {
     name: "Sneha",
     nicknames: ["Snehuu", "Jaan", "Babby", "Soan papdi"],
     displayName: "Mrs. Sneha Gupta Maurya",
-    birthday: "October 23",
+    birthday: "October 25",
   },
 
   theme: {
@@ -103,7 +103,7 @@ I love you more than these words could ever explain. Today, tomorrow, and in eve
       id: "photo-1",
       image: "/images/photo-01.webp",
       caption: "My beautiful wife and my favorite smile in the whole universe.",
-      date: "October 23",
+      date: "October 25",
     },
     {
       id: "photo-2",
