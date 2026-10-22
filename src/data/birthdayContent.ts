@@ -35,6 +35,7 @@ export interface CinematicSurpriseConfig {
   framePrefix: string;
   frameSuffix: string;
   scrollDistance: string;
+  songSrc?: string;
   invitationText: string;
   invitationSubtext: string;
   milestones: CinematicMilestone[];
@@ -293,6 +294,7 @@ I LOVE YOU SOOO MUCH, MERI BIWI. HAPPY BIRTHDAY, MERI SNEHUUU! ❤️🎀💋�
     framePrefix: "/frames/frame_",
     frameSuffix: ".jpg",
     scrollDistance: "850vh",
+    songSrc: "/audio/special-song.mp3",
     invitationText: "Scroll gently to unveil our story ↓",
     invitationSubtext: "Watch the movements unfold frame by frame with your scroll",
     milestones: [

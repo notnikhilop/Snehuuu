@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ArrowLeft, Sparkles, Compass } from 'lucide-react';
+import { Heart, ArrowLeft, Sparkles, Compass, Volume2, VolumeX } from 'lucide-react';
 import { birthdayContent } from '../data/birthdayContent';
 
 interface CinematicSurpriseProps {
@@ -30,6 +30,11 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
   const [isFirstFrameReady, setIsFirstFrameReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
+  // Background audio player for special page
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
   // In-memory caches for both sequences
   const cacheOneRef = useRef<(HTMLImageElement | null)[]>(new Array(openingConfig.totalFrames).fill(null));
   const cacheTwoRef = useRef<(HTMLImageElement | null)[]>(new Array(mainConfig.totalFrames).fill(null));
@@ -46,6 +51,72 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
+
+  // Direct song playback on page open without requiring manual user permission
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = 0.85;
+    let hasStarted = false;
+
+    const tryPlay = () => {
+      if (hasStarted) return;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            hasStarted = true;
+            setIsPlayingAudio(true);
+            cleanup();
+          })
+          .catch(() => {
+            // Browser restricted initial unprompted autoplay;
+            // It will instantly play on the first scroll, touch, or click
+          });
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('scroll', tryPlay);
+      window.removeEventListener('wheel', tryPlay);
+      window.removeEventListener('touchstart', tryPlay);
+      window.removeEventListener('pointerdown', tryPlay);
+      window.removeEventListener('keydown', tryPlay);
+      window.removeEventListener('click', tryPlay);
+    };
+
+    // 1. Attempt unprompted play immediately on mount
+    tryPlay();
+
+    // 2. Fallback: on the very first scroll, touch, or click, start immediately
+    window.addEventListener('scroll', tryPlay, { passive: true });
+    window.addEventListener('wheel', tryPlay, { passive: true });
+    window.addEventListener('touchstart', tryPlay, { passive: true });
+    window.addEventListener('pointerdown', tryPlay, { passive: true });
+    window.addEventListener('keydown', tryPlay, { passive: true });
+    window.addEventListener('click', tryPlay, { passive: true });
+
+    return () => {
+      cleanup();
+      audio.pause();
+    };
+  }, []);
+
+  const toggleSound = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlayingAudio && !isMuted) {
+      audio.muted = true;
+      setIsMuted(true);
+    } else {
+      audio.muted = false;
+      setIsMuted(false);
+      audio.play().catch(() => {});
+      setIsPlayingAudio(true);
+    }
+  };
 
   // Frame URL helpers
   const getFrameOneUrl = useCallback((index: number) => {
@@ -498,8 +569,19 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
             <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
           </div>
 
-          {/* Progress & Frame Counter */}
+          {/* Progress & Frame Counter + Sound Control */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleSound}
+              className="p-2 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-xl border border-white/20 text-[#F7C8D9] text-xs transition-all cursor-pointer active:scale-95 shadow-lg"
+              title={isPlayingAudio && !isMuted ? 'Mute Music' : 'Play Music'}
+            >
+              {isPlayingAudio && !isMuted ? (
+                <Volume2 className="w-3.5 h-3.5 text-[#D982A5] animate-pulse" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 text-white/70" />
+              )}
+            </button>
             <div className="px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
               {activeStage === 'opening'
                 ? `Act I • ${frameIndexOne + 1} / ${openingConfig.totalFrames}`
@@ -662,6 +744,15 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Hidden Audio Player: Directly plays the special song without requiring permission */}
+        <audio
+          ref={audioRef}
+          src={config.songSrc || '/audio/special-song.mp3'}
+          loop
+          preload="auto"
+          playsInline
+        />
 
       </div>
     </div>
