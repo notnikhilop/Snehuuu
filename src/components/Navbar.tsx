@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Volume2, VolumeX } from 'lucide-react';
+import { Heart, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { useAudioCoordinator } from '../context/AudioCoordinator';
 
 interface NavbarProps {
   onOpenSurprise: () => void;
+  onOpenCinematic?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenSurprise }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenSurprise, onOpenCinematic }) => {
   const { isMusicPlaying, toggleMusic } = useAudioCoordinator();
   const [scrolled, setScrolled] = useState(false);
 
@@ -50,7 +51,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSurprise }) => {
         {/* Minimal Nav Links */}
         <nav className="flex items-center gap-2.5 sm:gap-5 text-xs sm:text-sm font-medium text-[#75445C]">
           <button
-            onClick={() => scrollTo('birthday-wish')}
+            onClick={() => {
+              onOpenSurprise();
+              scrollTo('birthday-wish');
+            }}
             className="hover:text-[#2A1722] transition-colors cursor-pointer py-1 px-2 rounded-full hover:bg-white/50"
           >
             Wish
@@ -71,14 +75,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSurprise }) => {
           </button>
 
           <button
-            onClick={() => {
-              onOpenSurprise();
-              scrollTo('final-letter');
-            }}
-            className="flex items-center gap-1.5 bg-[#FCE7F0] hover:bg-[#F7C8D9] text-[#75445C] hover:text-[#2A1722] px-3 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium shadow-xs"
+            onClick={() => scrollTo('final-letter')}
+            className="hover:text-[#2A1722] transition-colors cursor-pointer py-1 px-2 rounded-full hover:bg-white/50"
           >
-            <span>Surprise</span>
-            <span className="text-xs">↗</span>
+            Letter
+          </button>
+
+          <button
+            onClick={() => {
+              if (onOpenCinematic) {
+                onOpenCinematic();
+              } else {
+                window.location.hash = '#surprise';
+              }
+            }}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-[#FCE7F0] to-[#F7C8D9] hover:from-[#F7C8D9] hover:to-[#D982A5] text-[#75445C] hover:text-[#2A1722] px-3 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium shadow-xs group"
+            title="Open Snehuu's Secret Cinematic Story"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#D982A5] group-hover:rotate-12 transition-transform" />
+            <span>Surprise 🎬</span>
           </button>
 
           {/* Quick Sound/Music Toggle */}

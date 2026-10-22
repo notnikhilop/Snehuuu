@@ -13,6 +13,29 @@ export interface VideoClip {
   poster?: string;
 }
 
+export interface CinematicMilestone {
+  id: string;
+  side: 'left' | 'right';
+  progressStart: number;
+  progressEnd: number;
+  title?: string;
+  text: string;
+}
+
+export interface CinematicSurpriseConfig {
+  videoSrc: string;
+  posterSrc?: string;
+  scrollDistance: string;
+  invitationText: string;
+  invitationSubtext: string;
+  milestones: CinematicMilestone[];
+  ending: {
+    title: string;
+    message: string;
+    returnButtonText: string;
+  };
+}
+
 export interface BirthdayContent {
   recipient: {
     name: string;
@@ -51,6 +74,7 @@ export interface BirthdayContent {
     message: string;
     signature: string;
   };
+  cinematicSurprise: CinematicSurpriseConfig;
   media: {
     musicSrc: string;
   };
@@ -243,6 +267,69 @@ I LOVE YOU SOOO MUCH, MERI BIWI. HAPPY BIRTHDAY, MERI SNEHUUU! ❤️🎀💋�
 💋😘😚😚😚😚Aur Bohat Sara Kissi Aapkoo😚😚😚😚😚😚😚😚😚😚😚💝💝💖💕💕😍💋💋😘😚😚😚😚
  Snehuu. Forever yours, Nikhil ❤️.`,
     signature: "Forever yours, Nikhil ❤️",
+  },
+
+  cinematicSurprise: {
+    videoSrc: "/videos/cinematic-velocity.mp4",
+    posterSrc: "/images/photo-01.webp",
+    scrollDistance: "550vh",
+    invitationText: "Scroll gently to unveil our story ↓",
+    invitationSubtext: "Watch the moments unfold with every scroll",
+    milestones: [
+      {
+        id: "step-1",
+        side: "left",
+        progressStart: 0.06,
+        progressEnd: 0.20,
+        title: "My Heart's Choice",
+        text: "In this whole world, my heart chose you.",
+      },
+      {
+        id: "step-2",
+        side: "right",
+        progressStart: 0.21,
+        progressEnd: 0.35,
+        title: "A Thousand Lifetimes",
+        text: "If I could choose a thousand times, I'd choose you every single time.",
+      },
+      {
+        id: "step-3",
+        side: "left",
+        progressStart: 0.36,
+        progressEnd: 0.50,
+        title: "Always Beside You",
+        text: "Even when I cannot hold you, my heart is always beside you.",
+      },
+      {
+        id: "step-4",
+        side: "right",
+        progressStart: 0.51,
+        progressEnd: 0.65,
+        title: "Across The Miles",
+        text: "One day, all these miles will turn into a hug.",
+      },
+      {
+        id: "step-5",
+        side: "left",
+        progressStart: 0.66,
+        progressEnd: 0.80,
+        title: "My Safe Haven",
+        text: "You are my favourite person, my safest place, and my forever.",
+      },
+      {
+        id: "step-6",
+        side: "right",
+        progressStart: 0.81,
+        progressEnd: 0.94,
+        title: "Through My Eyes",
+        text: "Happy Birthday, Meri Snehuu. If I could give you one thing, it would be the chance to see yourself through my eyes.",
+      },
+    ],
+    ending: {
+      title: "Happy Birthday, Meri Biwi",
+      message: "I would choose you in every lifetime. ♡",
+      returnButtonText: "Return to Birthday Page ♡",
+    },
   },
 
   media: {

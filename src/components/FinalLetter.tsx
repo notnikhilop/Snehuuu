@@ -3,7 +3,11 @@ import { motion } from 'framer-motion';
 import { Heart, Sparkles, ArrowUp, Star } from 'lucide-react';
 import { birthdayContent } from '../data/birthdayContent';
 
-export const FinalLetter: React.FC = () => {
+interface FinalLetterProps {
+  onOpenCinematic?: () => void;
+}
+
+export const FinalLetter: React.FC<FinalLetterProps> = ({ onOpenCinematic }) => {
   const { finalSurprise, recipient } = birthdayContent;
   const [isRevealed, setIsRevealed] = useState(false);
 
@@ -123,6 +127,26 @@ export const FinalLetter: React.FC = () => {
               <div className="mt-10 pt-6 border-t border-[#F7C8D9]/60 flex flex-col items-end">
                 <p className="text-2xl sm:text-3xl font-script text-[#75445C] mt-1 text-right">
                   {finalSurprise.signature}
+                </p>
+              </div>
+
+              {/* Secret Cinematic Gift Portal Button */}
+              <div className="mt-8 pt-6 border-t border-[#F7C8D9]/40 flex flex-col items-center text-center">
+                <button
+                  onClick={() => {
+                    if (onOpenCinematic) {
+                      onOpenCinematic();
+                    } else {
+                      window.location.hash = '#surprise';
+                    }
+                  }}
+                  className="inline-flex items-center gap-2.5 px-6 sm:px-8 py-3.5 rounded-full bg-gradient-to-r from-[#D982A5] via-[#F7C8D9] to-[#D982A5] text-[#2A1722] font-semibold text-xs sm:text-sm tracking-wide shadow-xl hover:shadow-[0_0_35px_rgba(217,130,165,0.6)] hover:scale-105 transition-all cursor-pointer group active:scale-95"
+                >
+                  <Sparkles className="w-4 h-4 text-[#75445C] group-hover:rotate-12 transition-transform" />
+                  <span>A Special Hidden Gift: Snehuu's Velocity Story 🎬✨</span>
+                </button>
+                <p className="text-[11px] text-[#75445C]/80 mt-2 font-medium">
+                  A scroll-driven cinematic journey made just for you ♡
                 </p>
               </div>
             </motion.div>
