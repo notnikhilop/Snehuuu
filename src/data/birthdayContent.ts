@@ -22,7 +22,15 @@ export interface CinematicMilestone {
   text: string;
 }
 
+export interface SequenceConfig {
+  totalFrames: number;
+  framePrefix: string;
+  frameSuffix: string;
+}
+
 export interface CinematicSurpriseConfig {
+  openingSequence: SequenceConfig;
+  mainSequence: SequenceConfig;
   totalFrames: number;
   framePrefix: string;
   frameSuffix: string;
@@ -271,10 +279,20 @@ I LOVE YOU SOOO MUCH, MERI BIWI. HAPPY BIRTHDAY, MERI SNEHUUU! ❤️🎀💋�
   },
 
   cinematicSurprise: {
+    openingSequence: {
+      totalFrames: 344,
+      framePrefix: "/frames-one/frame_",
+      frameSuffix: ".jpg",
+    },
+    mainSequence: {
+      totalFrames: 442,
+      framePrefix: "/frames/frame_",
+      frameSuffix: ".jpg",
+    },
     totalFrames: 442,
     framePrefix: "/frames/frame_",
     frameSuffix: ".jpg",
-    scrollDistance: "600vh",
+    scrollDistance: "850vh",
     invitationText: "Scroll gently to unveil our story ↓",
     invitationSubtext: "Watch the movements unfold frame by frame with your scroll",
     milestones: [

@@ -12,16 +12,21 @@ import { NavigationProgress } from './components/NavigationProgress';
 import { CinematicSurprise } from './components/CinematicSurprise';
 
 function AppInner() {
-  const [isCinematicOpen, setIsCinematicOpen] = useState(false);
+  // When website first opens, start with the cinematic Frame One opening sequence!
+  const [view, setView] = useState<'cinematic' | 'birthday'>(() => {
+    const hash = window.location.hash.toLowerCase();
+    return hash === '#birthday' || hash === '#main' ? 'birthday' : 'cinematic';
+  });
+
   const { pauseMusic } = useAudioCoordinator();
 
-  // Sync state with URL hash (#surprise or #cinematic)
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
-      const open = hash === '#surprise' || hash === '#cinematic';
-      setIsCinematicOpen(open);
-      if (open) {
+      if (hash === '#birthday' || hash === '#main') {
+        setView('birthday');
+      } else {
+        setView('cinematic');
         pauseMusic();
       }
     };
@@ -44,18 +49,18 @@ function AppInner() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleReturnFromCinematic = () => {
-    window.location.hash = '';
+  const handleReturnToBirthday = () => {
+    window.location.hash = '#birthday';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (isCinematicOpen) {
-    /* Hidden Surprise Page: Pure Scroll-driven Frame Sequence Animation (Visual-Only, Silent) */
-    return <CinematicSurprise onReturn={handleReturnFromCinematic} />;
+  if (view === 'cinematic') {
+    /* Full-screen Cinematic Sequence: Frame One -> Smooth Transition -> Frames -> Ending */
+    return <CinematicSurprise onReturn={handleReturnToBirthday} />;
   }
 
   return (
-    /* Main Birthday Experience */
+    /* Main Birthday Website */
     <div className="min-h-screen bg-[#FFF9F5] text-[#2A1722] relative selection:bg-[#F7C8D9] selection:text-[#75445C]">
       {/* Reading progress indicator */}
       <NavigationProgress />
