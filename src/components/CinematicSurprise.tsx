@@ -364,10 +364,11 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
         </header>
 
         {/* =========================================================================
-            CINEMATIC TEXT OVERLAYS: LEFT <-> RIGHT (GTA VI Style)
-            Rendered directly over the moving frames with film title typography
+            CINEMATIC TEXT OVERLAYS: LEFT <-> RIGHT (Pure Cinema Typography)
+            Positioned in lower viewport (70-78% height), completely transparent
+            No cards, no panels, no borders, no obscuring containers.
            ========================================================================= */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30 px-4 sm:px-8 md:px-16 lg:px-24">
+        <div className="absolute inset-x-0 bottom-[18vh] sm:bottom-[20vh] pointer-events-none z-30 px-6 sm:px-12 md:px-16 lg:px-24">
           <AnimatePresence mode="wait">
             {activeMilestone && !isEnding && (
               <motion.div
@@ -376,8 +377,8 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
                   reducedMotion
                     ? { opacity: 0 }
                     : activeMilestone.side === 'left'
-                    ? { opacity: 0, x: -70 }
-                    : { opacity: 0, x: 70 }
+                    ? { opacity: 0, x: -35 }
+                    : { opacity: 0, x: 35 }
                 }
                 animate={
                   reducedMotion
@@ -388,52 +389,52 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
                   reducedMotion
                     ? { opacity: 0 }
                     : activeMilestone.side === 'left'
-                    ? { opacity: 0, x: -50 }
-                    : { opacity: 0, x: 50 }
+                    ? { opacity: 0, x: -25 }
+                    : { opacity: 0, x: 25 }
                 }
-                transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                className={`w-full max-w-7xl flex ${
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className={`w-full max-w-7xl mx-auto flex ${
                   activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
                 }`}
               >
-                {/* Cinema Overlay Container: Overlaps the visual with grand typography */}
+                {/* Pure Transparent Typography Container (25-35% viewport width on desktop, 320-420px max) */}
                 <div
-                  className={`max-w-md sm:max-w-lg lg:max-w-2xl p-6 sm:p-8 md:p-10 rounded-3xl backdrop-blur-2xl border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.85)] ${
-                    activeMilestone.side === 'left'
-                      ? 'bg-gradient-to-r from-black/85 via-black/70 to-transparent text-left'
-                      : 'bg-gradient-to-l from-black/85 via-black/70 to-transparent text-right'
+                  className={`w-full max-w-[320px] sm:max-w-[380px] lg:max-w-[420px] bg-transparent p-0 m-0 border-0 shadow-none ${
+                    activeMilestone.side === 'left' ? 'text-left' : 'text-right'
                   }`}
                 >
-                  {/* Moment Subtitle */}
+                  {/* Moment Subtitle Label */}
                   <div
-                    className={`flex items-center gap-2 mb-3 text-xs uppercase tracking-widest text-[#F7C8D9] font-semibold ${
+                    className={`flex items-center gap-1.5 mb-2 text-[10px] sm:text-xs uppercase tracking-widest text-[#F7C8D9]/90 font-medium ${
                       activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
                     }`}
+                    style={{ textShadow: '0 1px 10px rgba(0, 0, 0, 0.9)' }}
                   >
-                    {activeMilestone.side === 'left' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
+                    {activeMilestone.side === 'left' && <Sparkles className="w-3 h-3 text-[#D982A5]" />}
                     <span>{activeMilestone.title}</span>
-                    {activeMilestone.side === 'right' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
+                    {activeMilestone.side === 'right' && <Sparkles className="w-3 h-3 text-[#D982A5]" />}
                   </div>
 
-                  {/* Large Cinematic Title */}
+                  {/* Refined Cinematic Serif Message */}
                   <h2
-                    className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-white tracking-tight"
+                    className="font-serif text-xl sm:text-2xl md:text-3xl lg:text-[2rem] font-semibold text-[#FFF9F5] leading-snug tracking-tight"
                     style={{
-                      textShadow: '0 0 35px rgba(247,200,217,0.45), 0 4px 16px rgba(0,0,0,0.95)',
+                      textShadow: '0 2px 14px rgba(0, 0, 0, 0.95), 0 0 24px rgba(247, 200, 217, 0.35)',
                     }}
                   >
                     "{activeMilestone.text}"
                   </h2>
 
-                  {/* Elegant Signature Stamp */}
-                  <div
-                    className={`mt-5 pt-3 border-t border-white/15 flex items-center gap-2 text-xs text-[#F7C8D9]/90 font-script text-lg ${
+                  {/* Minimal Supporting Romantic Label */}
+                  <p
+                    className={`mt-2 flex items-center gap-1.5 text-xs text-[#F7C8D9]/80 font-script text-base ${
                       activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
                     }`}
+                    style={{ textShadow: '0 1px 10px rgba(0, 0, 0, 0.9)' }}
                   >
-                    <Heart className="w-3.5 h-3.5 text-[#D982A5] fill-[#D982A5]" />
+                    <Heart className="w-2.5 h-2.5 text-[#D982A5] fill-[#D982A5]" />
                     <span>{activeMilestone.side === 'left' ? 'Forever Yours, Nikhil' : 'My Forever Biwi'}</span>
-                  </div>
+                  </p>
                 </div>
               </motion.div>
             )}
