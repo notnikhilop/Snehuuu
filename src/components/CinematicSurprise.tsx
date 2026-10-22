@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ArrowLeft, Sparkles, Volume2, VolumeX, Play, Pause, Compass } from 'lucide-react';
+import { Heart, ArrowLeft, Sparkles, Compass } from 'lucide-react';
 import { birthdayContent } from '../data/birthdayContent';
 
 interface CinematicSurpriseProps {
@@ -9,20 +9,20 @@ interface CinematicSurpriseProps {
 
 export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }) => {
   const config = birthdayContent.cinematicSurprise;
+  const totalFrames = config.totalFrames || 442;
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [progress, setProgress] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [isPlayingManual, setIsPlayingManual] = useState(false);
+  const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+  const [isFirstFrameReady, setIsFirstFrameReady] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  // References for ultra-smooth video scrubbing
-  const targetTimeRef = useRef(0);
-  const isSeekingRef = useRef(false);
-  const rafIdRef = useRef<number | null>(null);
+  // In-memory cache for all 442 frames
+  const framesCacheRef = useRef<(HTMLImageElement | null)[]>(new Array(totalFrames).fill(null));
+  const loadedIndicesRef = useRef<Set<number>>(new Set());
+  const requestedIndicesRef = useRef<Set<number>>(new Set());
 
   // Check prefers-reduced-motion
   useEffect(() => {
@@ -33,71 +33,163 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
-  // Update video currentTime safely without choking the browser decoder
-  const updateVideoTime = useCallback(() => {
-    const video = videoRef.current;
-    if (!video || !videoDuration || isPlayingManual) return;
+  // Frame URL generator: /frames/frame_0001.jpg -> /frames/frame_0442.jpg
+  const getFrameUrl = useCallback((index: number) => {
+    const frameNum = String(index + 1).padStart(4, '0');
+    return `${config.framePrefix}${frameNum}${config.frameSuffix}`;
+  }, [config.framePrefix, config.frameSuffix]);
 
-    const diff = Math.abs(video.currentTime - targetTimeRef.current);
-    if (diff < 0.04) return;
+  // Canvas drawing routine
+  const renderFrameToCanvas = useCallback((targetIndex: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    if (!isSeekingRef.current) {
-      isSeekingRef.current = true;
-      const target = Math.max(0, Math.min(videoDuration - 0.05, targetTimeRef.current));
-      
-      if ('fastSeek' in video && typeof (video as unknown as { fastSeek: (t: number) => void }).fastSeek === 'function') {
-        try {
-          (video as unknown as { fastSeek: (t: number) => void }).fastSeek(target);
-        } catch {
-          video.currentTime = target;
+    let img = framesCacheRef.current[targetIndex];
+
+    // If exact target frame isn't loaded yet, find nearest loaded frame
+    if (!img || !img.complete || img.naturalWidth === 0) {
+      if (loadedIndicesRef.current.size > 0) {
+        let bestDiff = Infinity;
+        let bestIdx = -1;
+        for (const loadedIdx of loadedIndicesRef.current) {
+          const diff = Math.abs(loadedIdx - targetIndex);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestIdx = loadedIdx;
+          }
         }
-      } else {
-        video.currentTime = target;
+        if (bestIdx !== -1) {
+          img = framesCacheRef.current[bestIdx];
+        }
       }
     }
-  }, [videoDuration, isPlayingManual]);
 
-  // Video loaded metadata handler
+    if (img && img.complete && img.naturalWidth > 0) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const targetW = Math.round(rect.width * dpr);
+      const targetH = Math.round(rect.height * dpr);
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Aspect cover calculation
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const canvasAspect = canvas.width / canvas.height;
+      let drawW = canvas.width;
+      let drawH = canvas.height;
+      let drawX = 0;
+      let drawY = 0;
+
+      if (imgAspect > canvasAspect) {
+        drawW = canvas.height * imgAspect;
+        drawX = (canvas.width - drawW) / 2;
+      } else {
+        drawH = canvas.width / imgAspect;
+        drawY = (canvas.height - drawH) / 2;
+      }
+
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    }
+  }, []);
+
+  // Frame loading helper
+  const loadSingleFrame = useCallback((index: number, isPriority = false) => {
+    if (index < 0 || index >= totalFrames) return;
+    if (requestedIndicesRef.current.has(index)) return;
+
+    requestedIndicesRef.current.add(index);
+    const img = new Image();
+    if (isPriority) {
+      img.fetchPriority = 'high';
+    }
+    img.src = getFrameUrl(index);
+    img.onload = () => {
+      framesCacheRef.current[index] = img;
+      loadedIndicesRef.current.add(index);
+
+      if (index === 0) {
+        setIsFirstFrameReady(true);
+      }
+
+      // If this frame corresponds to the active target index, draw it immediately
+      if (index === currentFrameIndex) {
+        renderFrameToCanvas(index);
+      }
+    };
+  }, [totalFrames, getFrameUrl, currentFrameIndex, renderFrameToCanvas]);
+
+  // Initial load: Preload first frame immediately + initial buffer
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    // Priority load frame 0
+    loadSingleFrame(0, true);
 
-    const handleLoadedMetadata = () => {
-      if (Number.isFinite(video.duration) && video.duration > 0) {
-        setVideoDuration(video.duration);
-        setIsVideoLoaded(true);
+    // Initial forward buffer
+    for (let i = 1; i <= Math.min(25, totalFrames - 1); i++) {
+      loadSingleFrame(i, true);
+    }
+
+    // Load keyframes spread across the reel so seeking is instantaneous
+    for (let i = 30; i < totalFrames; i += 20) {
+      loadSingleFrame(i, false);
+    }
+
+    // Background idle loader to progressively fetch the entire reel
+    let idleIndex = 26;
+    let idleHandle: number;
+
+    const loadNextBatch = () => {
+      let count = 0;
+      while (idleIndex < totalFrames && count < 8) {
+        loadSingleFrame(idleIndex, false);
+        idleIndex++;
+        count++;
+      }
+
+      if (idleIndex < totalFrames) {
+        if ('requestIdleCallback' in window) {
+          idleHandle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(loadNextBatch);
+        } else {
+          idleHandle = setTimeout(loadNextBatch, 80) as unknown as number;
+        }
       }
     };
 
-    const handleSeeked = () => {
-      isSeekingRef.current = false;
-      const diff = Math.abs(video.currentTime - targetTimeRef.current);
-      if (diff >= 0.04 && !isPlayingManual) {
-        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = requestAnimationFrame(updateVideoTime);
-      }
-    };
-
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    video.addEventListener('durationchange', handleLoadedMetadata);
-    video.addEventListener('seeked', handleSeeked);
-
-    // Initial check in case video is already cached/loaded
-    if (video.readyState >= 1 && Number.isFinite(video.duration)) {
-      handleLoadedMetadata();
+    if ('requestIdleCallback' in window) {
+      idleHandle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(loadNextBatch);
+    } else {
+      idleHandle = setTimeout(loadNextBatch, 150) as unknown as number;
     }
 
     return () => {
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      video.removeEventListener('durationchange', handleLoadedMetadata);
-      video.removeEventListener('seeked', handleSeeked);
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      if ('cancelIdleCallback' in window) {
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(idleHandle);
+      } else {
+        clearTimeout(idleHandle);
+      }
     };
-  }, [updateVideoTime, isPlayingManual]);
+  }, [loadSingleFrame, totalFrames]);
 
-  // Scroll tracking to calculate normalized 0 -> 1 progress
+  // Window resize listener to re-render canvas cleanly
   useEffect(() => {
-    const calculateProgress = () => {
+    const handleResize = () => {
+      renderFrameToCanvas(currentFrameIndex);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [currentFrameIndex, renderFrameToCanvas]);
+
+  // Scroll handler: Calculate progress and map directly to frame index
+  useEffect(() => {
+    let rafId: number | null = null;
+
+    const handleScroll = () => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const totalScrollable = rect.height - window.innerHeight;
@@ -106,210 +198,196 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
 
       const currentScroll = -rect.top;
       const normalized = Math.max(0, Math.min(1, currentScroll / totalScrollable));
-      setProgress(normalized);
 
-      if (!isPlayingManual && videoDuration > 0) {
-        targetTimeRef.current = normalized * videoDuration;
-        if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = requestAnimationFrame(updateVideoTime);
-      }
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        setProgress(normalized);
+
+        // Core formula requested: frameIndex = floor(scrollProgress * (totalFrames - 1))
+        const frameIdx = Math.min(
+          totalFrames - 1,
+          Math.max(0, Math.floor(normalized * (totalFrames - 1)))
+        );
+
+        setCurrentFrameIndex(frameIdx);
+
+        // Prioritize loading frames surrounding the current frame
+        for (let offset = -5; offset <= 20; offset++) {
+          const target = frameIdx + offset;
+          if (target >= 0 && target < totalFrames) {
+            loadSingleFrame(target, true);
+          }
+        }
+
+        renderFrameToCanvas(frameIdx);
+      });
     };
 
-    window.addEventListener('scroll', calculateProgress, { passive: true });
-    window.addEventListener('resize', calculateProgress, { passive: true });
-    calculateProgress();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', calculateProgress);
-      window.removeEventListener('resize', calculateProgress);
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [videoDuration, isPlayingManual, updateVideoTime]);
+  }, [totalFrames, loadSingleFrame, renderFrameToCanvas]);
 
-  // Active milestone finder
+  // When first frame is ready, draw it
+  useEffect(() => {
+    if (isFirstFrameReady) {
+      renderFrameToCanvas(currentFrameIndex);
+    }
+  }, [isFirstFrameReady, currentFrameIndex, renderFrameToCanvas]);
+
+  // Active cinematic milestone calculation
   const activeMilestone = config.milestones.find(
     (m) => progress >= m.progressStart && progress <= m.progressEnd
   );
 
-  // Manual playback toggle fallback
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (isPlayingManual) {
-      video.pause();
-      setIsPlayingManual(false);
-    } else {
-      video.play().catch(() => {});
-      setIsPlayingManual(true);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  const isEnding = progress >= 0.94;
+  const isEnding = progress >= 0.97;
   const isIntro = progress < 0.06;
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full bg-[#140810] text-[#FFF9F5] selection:bg-[#F7C8D9] selection:text-[#75445C] overflow-x-hidden"
-      style={{ height: config.scrollDistance || '550vh' }}
+      className="relative w-full bg-[#12070E] text-[#FFF9F5] selection:bg-[#F7C8D9] selection:text-[#75445C] overflow-x-hidden"
+      style={{ height: config.scrollDistance || '600vh' }}
     >
-      {/* Dreamy Ambient Background Lighting */}
+      {/* Dreamy Romantic Atmospheric Glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[15%] left-[20%] w-[38rem] h-[38rem] rounded-full bg-[#D982A5]/15 blur-[120px]" />
-        <div className="absolute bottom-[20%] right-[15%] w-[42rem] h-[42rem] rounded-full bg-[#F7C8D9]/12 blur-[140px]" />
-        <div className="absolute top-[60%] left-[50%] -translate-x-1/2 w-[35rem] h-[35rem] rounded-full bg-[#75445C]/20 blur-[130px]" />
+        <div className="absolute top-[20%] left-[25%] w-[45rem] h-[45rem] rounded-full bg-[#D982A5]/12 blur-[130px]" />
+        <div className="absolute bottom-[20%] right-[20%] w-[50rem] h-[50rem] rounded-full bg-[#F7C8D9]/10 blur-[150px]" />
+        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] rounded-full bg-[#75445C]/18 blur-[120px]" />
       </div>
 
-      {/* Sticky Stage: Perfectly centered viewport for Desktop & Mobile */}
-      <div className="sticky top-0 h-screen w-full flex flex-col justify-between items-center px-4 sm:px-6 md:px-10 py-5 select-none overflow-hidden">
+      {/* STICKY CINEMATIC VIEWPORT */}
+      <div className="sticky top-0 h-screen w-full flex flex-col justify-between items-center px-4 sm:px-8 py-5 select-none overflow-hidden">
         
-        {/* Top Control Header */}
+        {/* Top Minimal Navigation Bar */}
         <header className="w-full max-w-7xl flex items-center justify-between z-40">
           <button
             onClick={onReturn}
             className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium text-white transition-all shadow-md cursor-pointer active:scale-95"
-            title="Return to main birthday page"
+            title="Return to birthday page"
           >
             <ArrowLeft className="w-4 h-4 text-[#F7C8D9] group-hover:-translate-x-1 transition-transform" />
             <span>Birthday Page</span>
           </button>
 
-          {/* Cinematic Title Pill */}
+          {/* Center Title Badge */}
           <div className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-xs text-[#F7C8D9] font-medium tracking-wider uppercase">
             <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />
-            <span>Snehuu's Velocity Story</span>
+            <span>Snehuu's Velocity Reel</span>
             <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
           </div>
 
-          {/* Progress Indicator & Scrub / Play Mode Controls */}
+          {/* Progress & Frame Counter Pill */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={togglePlay}
-              className={`p-2 rounded-full border text-xs transition-all cursor-pointer backdrop-blur-md ${
-                isPlayingManual
-                  ? 'bg-[#D982A5] text-white border-[#D982A5] shadow-[0_0_15px_rgba(217,130,165,0.6)]'
-                  : 'bg-white/10 hover:bg-white/20 text-white/80 border-white/20'
-              }`}
-              title={isPlayingManual ? 'Pause video (Return to scroll mode)' : 'Play video continuously'}
-            >
-              {isPlayingManual ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            </button>
-
-            <button
-              onClick={toggleMute}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 text-xs transition-all cursor-pointer backdrop-blur-md"
-              title={isMuted ? 'Unmute video audio' : 'Mute video audio'}
-            >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#F7C8D9]" />}
-            </button>
-
-            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider min-w-[50px] text-center">
+            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
+              Frame {currentFrameIndex + 1} / {totalFrames}
+            </div>
+            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
               {Math.round(progress * 100)}%
             </div>
           </div>
         </header>
 
         {/* =========================================================================
-            DESKTOP & TABLET 3-COLUMN LAYOUT (md and up)
+            CENTRAL CINEMATIC STAGE: Centered Portrait Canvas + Overlapping Text
            ========================================================================= */}
-        <div className="hidden md:grid md:grid-cols-12 w-full max-w-7xl mx-auto flex-1 items-center gap-6 my-auto relative z-20">
+        <div className="relative w-full max-w-7xl mx-auto flex-1 flex items-center justify-center my-auto z-20">
           
-          {/* LEFT COLUMN: Odd Milestones (1, 3, 5) */}
-          <div className="md:col-span-4 flex flex-col items-end justify-center pr-2 lg:pr-6 h-full">
-            <AnimatePresence mode="wait">
-              {activeMilestone && activeMilestone.side === 'left' && !isEnding && (
-                <motion.div
-                  key={activeMilestone.id}
-                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -25, y: 15 }}
-                  animate={reducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, y: 0 }}
-                  exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -15, y: -15 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="w-full max-w-sm bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-6 lg:p-8 shadow-2xl text-right relative overflow-hidden group"
-                >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#D982A5]/20 rounded-bl-full pointer-events-none blur-md" />
-                  
-                  {activeMilestone.title && (
-                    <div className="flex items-center justify-end gap-2 mb-3 text-xs uppercase tracking-widest text-[#F7C8D9] font-semibold">
-                      <span>{activeMilestone.title}</span>
-                      <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />
-                    </div>
-                  )}
+          {/* Ambient Glow Behind Portrait Animation */}
+          <div className="absolute w-[320px] sm:w-[420px] md:w-[460px] h-[550px] sm:h-[680px] bg-gradient-to-tr from-[#D982A5]/30 via-[#F7C8D9]/20 to-[#75445C]/35 rounded-[3rem] blur-3xl pointer-events-none -z-10" />
 
-                  <p className="font-serif text-xl lg:text-2xl leading-relaxed text-white font-medium italic">
-                    "{activeMilestone.text}"
-                  </p>
+          {/* Central Portrait Canvas Container */}
+          <div className="relative rounded-[2rem] overflow-hidden border-2 border-white/25 shadow-[0_25px_70px_-15px_rgba(217,130,165,0.45)] bg-[#0A0307] aspect-[9/16] h-[64vh] sm:h-[72vh] md:h-[78vh] max-h-[820px] w-auto flex items-center justify-center">
+            <canvas
+              ref={canvasRef}
+              className="w-full h-full object-cover select-none pointer-events-none"
+            />
 
-                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-end gap-1.5 text-xs text-[#F7C8D9]/70 font-script text-base">
-                    <span>Forever Yours</span>
-                    <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {!isFirstFrameReady && (
+              <div className="absolute inset-0 bg-[#12070E] flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-12 h-12 rounded-full border-2 border-[#D982A5] border-t-transparent animate-spin mb-4" />
+                <p className="text-xs text-[#F7C8D9] tracking-widest uppercase">Unfolding Snehuu's dance reel...</p>
+              </div>
+            )}
           </div>
 
-          {/* CENTRE COLUMN: Portrait Velocity Video */}
-          <div className="md:col-span-4 flex flex-col items-center justify-center relative">
-            {/* Ambient Backlight Glow */}
-            <div className="absolute -inset-4 bg-gradient-to-tr from-[#D982A5]/35 via-[#F7C8D9]/25 to-[#75445C]/35 rounded-[3rem] blur-2xl pointer-events-none -z-10" />
-
-            {/* Video Container */}
-            <div className="relative rounded-[2rem] overflow-hidden border-2 border-white/30 shadow-[0_25px_70px_-15px_rgba(217,130,165,0.45)] bg-black/80 aspect-[9/16] max-h-[75vh] w-auto flex items-center justify-center">
-              <video
-                ref={videoRef}
-                src={config.videoSrc}
-                poster={config.posterSrc}
-                playsInline
-                muted={isMuted}
-                preload="auto"
-                className="w-full h-full object-cover select-none pointer-events-none"
-              />
-
-              {!isVideoLoaded && (
-                <div className="absolute inset-0 bg-[#160B12] flex flex-col items-center justify-center p-6 text-center">
-                  <div className="w-12 h-12 rounded-full border-2 border-[#D982A5] border-t-transparent animate-spin mb-4" />
-                  <p className="text-xs text-[#F7C8D9] tracking-wider uppercase">Loading Snehuu's Velocity Edit...</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Even Milestones (2, 4, 6) */}
-          <div className="md:col-span-4 flex flex-col items-start justify-center pl-2 lg:pl-6 h-full">
+          {/* =======================================================================
+              CINEMATIC TEXT OVERLAYS: LEFT, RIGHT, LEFT, RIGHT
+              Partially overlapping the central portrait canvas like cinema subtitles
+             ======================================================================= */}
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
             <AnimatePresence mode="wait">
-              {activeMilestone && activeMilestone.side === 'right' && !isEnding && (
+              {activeMilestone && !isEnding && (
                 <motion.div
                   key={activeMilestone.id}
-                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 25, y: 15 }}
-                  animate={reducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, y: 0 }}
-                  exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 15, y: -15 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="w-full max-w-sm bg-gradient-to-bl from-white/15 to-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-6 lg:p-8 shadow-2xl text-left relative overflow-hidden group"
+                  initial={
+                    reducedMotion
+                      ? { opacity: 0 }
+                      : activeMilestone.side === 'left'
+                      ? { opacity: 0, x: -60, y: 15 }
+                      : { opacity: 0, x: 60, y: 15 }
+                  }
+                  animate={
+                    reducedMotion
+                      ? { opacity: 1 }
+                      : { opacity: 1, x: 0, y: 0 }
+                  }
+                  exit={
+                    reducedMotion
+                      ? { opacity: 0 }
+                      : activeMilestone.side === 'left'
+                      ? { opacity: 0, x: -40, y: -15 }
+                      : { opacity: 0, x: 40, y: -15 }
+                  }
+                  transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  className={`absolute w-full px-4 sm:px-8 max-w-6xl flex ${
+                    activeMilestone.side === 'left'
+                      ? 'justify-start'
+                      : 'justify-end'
+                  }`}
                 >
-                  <div className="absolute top-0 left-0 w-24 h-24 bg-[#F7C8D9]/20 rounded-br-full pointer-events-none blur-md" />
-                  
-                  {activeMilestone.title && (
-                    <div className="flex items-center justify-start gap-2 mb-3 text-xs uppercase tracking-widest text-[#F7C8D9] font-semibold">
-                      <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />
+                  {/* The Glassmorphic Text Card with Soft Backdrop for Flawless Readability */}
+                  <div
+                    className={`max-w-md sm:max-w-lg lg:max-w-xl p-5 sm:p-7 md:p-8 rounded-3xl backdrop-blur-xl border border-white/25 shadow-2xl ${
+                      activeMilestone.side === 'left'
+                        ? 'bg-gradient-to-r from-[#140810]/92 via-[#1E0B19]/85 to-[#140810]/60 text-left -ml-2 sm:ml-4 lg:ml-12'
+                        : 'bg-gradient-to-l from-[#140810]/92 via-[#1E0B19]/85 to-[#140810]/60 text-right -mr-2 sm:mr-4 lg:mr-12'
+                    }`}
+                  >
+                    {/* Moment Badge */}
+                    <div
+                      className={`flex items-center gap-2 mb-3 text-xs uppercase tracking-widest text-[#F7C8D9] font-semibold ${
+                        activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
+                      }`}
+                    >
+                      {activeMilestone.side === 'left' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
                       <span>{activeMilestone.title}</span>
+                      {activeMilestone.side === 'right' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
                     </div>
-                  )}
 
-                  <p className="font-serif text-xl lg:text-2xl leading-relaxed text-white font-medium italic">
-                    "{activeMilestone.text}"
-                  </p>
+                    {/* Romantic Message Text */}
+                    <p
+                      className="font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-snug sm:leading-relaxed text-white font-medium italic drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
+                      style={{
+                        textShadow: '0 0 24px rgba(247,200,217,0.4), 0 2px 10px rgba(0,0,0,0.85)',
+                      }}
+                    >
+                      "{activeMilestone.text}"
+                    </p>
 
-                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-start gap-1.5 text-xs text-[#F7C8D9]/70 font-script text-base">
-                    <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
-                    <span>My Forever Favourite</span>
+                    {/* Footer decoration */}
+                    <div
+                      className={`mt-4 pt-3 border-t border-white/15 flex items-center gap-1.5 text-xs text-[#F7C8D9]/80 font-script text-base ${
+                        activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
+                      }`}
+                    >
+                      <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
+                      <span>{activeMilestone.side === 'left' ? 'Forever Yours, Nikhil' : 'My Forever Biwi'}</span>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -317,69 +395,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
           </div>
         </div>
 
-        {/* =========================================================================
-            MOBILE LAYOUT (< md): Vertical Stack with Alternating Top/Bottom Cards
-           ========================================================================= */}
-        <div className="flex md:hidden flex-col items-center justify-between w-full flex-1 my-auto relative z-20 py-2">
-          
-          {/* Top Slot (for Left/Odd Milestones: 1, 3, 5) */}
-          <div className="w-full min-h-[90px] flex items-center justify-center px-2">
-            <AnimatePresence mode="wait">
-              {activeMilestone && activeMilestone.side === 'left' && !isEnding && (
-                <motion.div
-                  key={activeMilestone.id}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.4 }}
-                  className="w-full max-w-xs bg-white/15 backdrop-blur-lg border border-white/25 rounded-2xl p-4 shadow-xl text-center"
-                >
-                  <p className="font-serif text-base sm:text-lg leading-snug text-white font-medium italic">
-                    "{activeMilestone.text}"
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Centered Portrait Video */}
-          <div className="relative my-auto flex items-center justify-center">
-            <div className="absolute -inset-3 bg-[#D982A5]/30 rounded-[2.5rem] blur-xl pointer-events-none -z-10" />
-            <div className="relative rounded-[1.8rem] overflow-hidden border-2 border-white/30 shadow-2xl bg-black/80 aspect-[9/16] max-h-[50vh] sm:max-h-[54vh] w-auto">
-              <video
-                ref={videoRef}
-                src={config.videoSrc}
-                poster={config.posterSrc}
-                playsInline
-                muted={isMuted}
-                preload="auto"
-                className="w-full h-full object-cover select-none pointer-events-none"
-              />
-            </div>
-          </div>
-
-          {/* Bottom Slot (for Right/Even Milestones: 2, 4, 6) */}
-          <div className="w-full min-h-[90px] flex items-center justify-center px-2">
-            <AnimatePresence mode="wait">
-              {activeMilestone && activeMilestone.side === 'right' && !isEnding && (
-                <motion.div
-                  key={activeMilestone.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.4 }}
-                  className="w-full max-w-xs bg-white/15 backdrop-blur-lg border border-white/25 rounded-2xl p-4 shadow-xl text-center"
-                >
-                  <p className="font-serif text-base sm:text-lg leading-snug text-white font-medium italic">
-                    "{activeMilestone.text}"
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Gentle Scroll Invitation (Intro) */}
+        {/* Gentle Scroll Invitation (Visible at top of section) */}
         <AnimatePresence>
           {isIntro && (
             <motion.div
@@ -404,7 +420,9 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
           )}
         </AnimatePresence>
 
-        {/* Final Ending Card (When user reaches end of scroll) */}
+        {/* =========================================================================
+            FINAL ENDING REVEAL: Exactly reaches final frame 442, then reveals ending
+           ========================================================================= */}
         <AnimatePresence>
           {isEnding && (
             <motion.div
@@ -412,9 +430,9 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.6 }}
-              className="absolute inset-0 bg-[#140810]/90 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6 text-center overflow-y-auto"
+              className="absolute inset-0 bg-[#12070E]/94 backdrop-blur-2xl z-50 flex flex-col items-center justify-center p-6 text-center overflow-y-auto"
             >
-              {/* Floating Heart Icon with Pulse */}
+              {/* Floating Heart with Pulse */}
               <div className="relative mb-6">
                 <motion.div
                   animate={{ scale: [1, 1.08, 1] }}

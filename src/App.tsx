@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AudioProvider } from './context/AudioCoordinator';
+import { AudioProvider, useAudioCoordinator } from './context/AudioCoordinator';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { BirthdayWish } from './components/BirthdayWish';
@@ -11,20 +11,25 @@ import { MusicPlayer } from './components/MusicPlayer';
 import { NavigationProgress } from './components/NavigationProgress';
 import { CinematicSurprise } from './components/CinematicSurprise';
 
-export function App() {
+function AppInner() {
   const [isCinematicOpen, setIsCinematicOpen] = useState(false);
+  const { pauseMusic } = useAudioCoordinator();
 
   // Sync state with URL hash (#surprise or #cinematic)
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
-      setIsCinematicOpen(hash === '#surprise' || hash === '#cinematic');
+      const open = hash === '#surprise' || hash === '#cinematic';
+      setIsCinematicOpen(open);
+      if (open) {
+        pauseMusic();
+      }
     };
 
     handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [pauseMusic]);
 
   const handleOpenSurprise = () => {
     const el = document.getElementById('birthday-wish');
@@ -34,6 +39,7 @@ export function App() {
   };
 
   const handleOpenCinematic = () => {
+    pauseMusic();
     window.location.hash = '#surprise';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -43,44 +49,50 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  if (isCinematicOpen) {
+    /* Hidden Surprise Page: Pure Scroll-driven Frame Sequence Animation (Visual-Only, Silent) */
+    return <CinematicSurprise onReturn={handleReturnFromCinematic} />;
+  }
+
+  return (
+    /* Main Birthday Experience */
+    <div className="min-h-screen bg-[#FFF9F5] text-[#2A1722] relative selection:bg-[#F7C8D9] selection:text-[#75445C]">
+      {/* Reading progress indicator */}
+      <NavigationProgress />
+
+      {/* Minimal Header */}
+      <Navbar onOpenSurprise={handleOpenSurprise} onOpenCinematic={handleOpenCinematic} />
+
+      <main className="relative z-10">
+        {/* 1. Hero Section (SNEHUU, 3D Glass Heart, Ribbons) */}
+        <Hero onOpenSurprise={handleOpenSurprise} />
+
+        {/* 2. Heartfelt Birthday Wish & Interactive Cake */}
+        <BirthdayWish />
+
+        {/* 3. Our Memories Gallery (Main feature: 12 replaceable slots + full-screen viewer) */}
+        <MemoryGallery />
+
+        {/* 4. Little Moments (Short videos with viewport silent autoplay + mute toggle) */}
+        <LittleMoments />
+
+        {/* 5. A Message From Me (Voice Recording Player) */}
+        <VoiceMessage />
+
+        {/* 6. Final Surprise Closing Message & Secret Story Portal */}
+        <FinalLetter onOpenCinematic={handleOpenCinematic} />
+      </main>
+
+      {/* Floating Background Music Player only on main birthday page */}
+      <MusicPlayer />
+    </div>
+  );
+}
+
+export function App() {
   return (
     <AudioProvider>
-      {isCinematicOpen ? (
-        /* Hidden Surprise Page: Scroll-controlled Cinematic Velocity Experience */
-        <CinematicSurprise onReturn={handleReturnFromCinematic} />
-      ) : (
-        /* Main Birthday Experience */
-        <div className="min-h-screen bg-[#FFF9F5] text-[#2A1722] relative selection:bg-[#F7C8D9] selection:text-[#75445C]">
-          {/* Reading progress indicator */}
-          <NavigationProgress />
-
-          {/* Minimal Header */}
-          <Navbar onOpenSurprise={handleOpenSurprise} onOpenCinematic={handleOpenCinematic} />
-
-          <main className="relative z-10">
-            {/* 1. Hero Section (SNEHUU, 3D Glass Heart, Ribbons) */}
-            <Hero onOpenSurprise={handleOpenSurprise} />
-
-            {/* 2. Heartfelt Birthday Wish & Interactive Cake */}
-            <BirthdayWish />
-
-            {/* 3. Our Memories Gallery (Main feature: 12 replaceable slots + full-screen viewer) */}
-            <MemoryGallery />
-
-            {/* 4. Little Moments (Short videos with viewport silent autoplay + mute toggle) */}
-            <LittleMoments />
-
-            {/* 5. A Message From Me (Voice Recording Player) */}
-            <VoiceMessage />
-
-            {/* 6. Final Surprise Closing Message & Secret Story Portal */}
-            <FinalLetter onOpenCinematic={handleOpenCinematic} />
-          </main>
-        </div>
-      )}
-
-      {/* Floating Background Music Player remains active across views */}
-      <MusicPlayer />
+      <AppInner />
     </AudioProvider>
   );
 }
