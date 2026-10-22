@@ -43,6 +43,12 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
   const loadedOneRef = useRef<Set<number>>(new Set());
   const loadedTwoRef = useRef<Set<number>>(new Set());
 
+  // Performance & glitch-prevention refs
+  const lastRenderedOneRef = useRef<HTMLImageElement | null>(null);
+  const lastRenderedTwoRef = useRef<HTMLImageElement | null>(null);
+  const bgImgRef = useRef<HTMLImageElement | null>(null);
+  const lastNormalizedRef = useRef<number>(0);
+
   // Check prefers-reduced-motion
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -129,20 +135,32 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     return `${mainConfig.framePrefix}${num}${mainConfig.frameSuffix}`;
   }, [mainConfig]);
 
-  // Frame load helpers
+  // Frame load helpers with GPU async pre-decoding (prevents main-thread decode freeze on Windows)
   const loadFrameOne = useCallback((index: number, isPriority = false) => {
     if (index < 0 || index >= openingConfig.totalFrames) return;
     if (requestedOneRef.current.has(index)) return;
 
     requestedOneRef.current.add(index);
     const img = new Image();
+    img.decoding = 'async';
     if (isPriority) img.fetchPriority = 'high';
     img.src = getFrameOneUrl(index);
-    img.onload = () => {
+
+    const markLoaded = () => {
       cacheOneRef.current[index] = img;
       loadedOneRef.current.add(index);
       if (index === 0) setIsFirstFrameReady(true);
     };
+
+    if (typeof img.decode === 'function') {
+      img.decode()
+        .then(markLoaded)
+        .catch(() => {
+          if (img.complete && img.naturalWidth > 0) markLoaded();
+        });
+    } else {
+      img.onload = markLoaded;
+    }
   }, [openingConfig.totalFrames, getFrameOneUrl]);
 
   const loadFrameTwo = useCallback((index: number, isPriority = false) => {
@@ -151,36 +169,58 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
 
     requestedTwoRef.current.add(index);
     const img = new Image();
+    img.decoding = 'async';
     if (isPriority) img.fetchPriority = 'high';
     img.src = getFrameTwoUrl(index);
-    img.onload = () => {
+
+    const markLoaded = () => {
       cacheTwoRef.current[index] = img;
       loadedTwoRef.current.add(index);
     };
+
+    if (typeof img.decode === 'function') {
+      img.decode()
+        .then(markLoaded)
+        .catch(() => {
+          if (img.complete && img.naturalWidth > 0) markLoaded();
+        });
+    } else {
+      img.onload = markLoaded;
+    }
   }, [mainConfig.totalFrames, getFrameTwoUrl]);
 
   // Preloading & initial buffer
   useEffect(() => {
-    // Priority load frame 0 of Sequence 1
+    // Priority load initial window for Sequence 1
     loadFrameOne(0, true);
-    for (let i = 1; i <= Math.min(30, openingConfig.totalFrames - 1); i++) {
+    for (let i = 1; i <= Math.min(35, openingConfig.totalFrames - 1); i++) {
       loadFrameOne(i, true);
     }
-    // Also preload frame 0 of Sequence 2 in background for seamless crossfade
+    // Also preload start of Sequence 2 in background for seamless crossfade
     loadFrameTwo(0, false);
     loadFrameTwo(1, false);
 
-    // Idle batch loader for Sequence 1
-    let idleIndex = 31;
+    // Progressive Idle batch loader for remaining Sequence 1 and Sequence 2
+    let idleIndexOne = 36;
+    let idleIndexTwo = 2;
     let idleHandle: number;
+
     const loadNextBatch = () => {
       let count = 0;
-      while (idleIndex < openingConfig.totalFrames && count < 8) {
-        loadFrameOne(idleIndex, false);
-        idleIndex++;
+      // First finish Sequence 1
+      while (idleIndexOne < openingConfig.totalFrames && count < 8) {
+        loadFrameOne(idleIndexOne, false);
+        idleIndexOne++;
         count++;
       }
-      if (idleIndex < openingConfig.totalFrames) {
+      // Then progressively preload Sequence 2
+      while (idleIndexOne >= openingConfig.totalFrames && idleIndexTwo < mainConfig.totalFrames && count < 8) {
+        loadFrameTwo(idleIndexTwo, false);
+        idleIndexTwo++;
+        count++;
+      }
+
+      if (idleIndexOne < openingConfig.totalFrames || idleIndexTwo < mainConfig.totalFrames) {
         if ('requestIdleCallback' in window) {
           idleHandle = (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(loadNextBatch);
         } else {
@@ -202,7 +242,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
         clearTimeout(idleHandle);
       }
     };
-  }, [loadFrameOne, loadFrameTwo, openingConfig.totalFrames]);
+  }, [loadFrameOne, loadFrameTwo, openingConfig.totalFrames, mainConfig.totalFrames]);
 
   // Initial 1-Second Automatic Scroll: only runs once on initial open
   useEffect(() => {
@@ -260,24 +300,65 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     };
   }, []);
 
+  // Safe frame resolution: finds closest available or holds last valid to eliminate visual jumping/flicker
+  const getBestAvailableImage = useCallback((
+    cache: (HTMLImageElement | null)[],
+    targetIdx: number,
+    lastValid: HTMLImageElement | null,
+    totalFrames: number
+  ): HTMLImageElement | null => {
+    // 1. Direct hit
+    const exact = cache[targetIdx];
+    if (exact && exact.complete && exact.naturalWidth > 0) {
+      return exact;
+    }
+
+    // 2. Search nearest neighbours in local window (closest first)
+    for (let dist = 1; dist <= 12; dist++) {
+      const prev = targetIdx - dist;
+      if (prev >= 0) {
+        const pImg = cache[prev];
+        if (pImg && pImg.complete && pImg.naturalWidth > 0) return pImg;
+      }
+      const next = targetIdx + dist;
+      if (next < totalFrames) {
+        const nImg = cache[next];
+        if (nImg && nImg.complete && nImg.naturalWidth > 0) return nImg;
+      }
+    }
+
+    // 3. Fallback to last successfully rendered frame (prevents any skipping/jumping!)
+    if (lastValid && lastValid.complete && lastValid.naturalWidth > 0) {
+      return lastValid;
+    }
+
+    // 4. Initial fallback only: first available loaded frame
+    for (let i = 0; i < totalFrames; i++) {
+      const fallback = cache[i];
+      if (fallback && fallback.complete && fallback.naturalWidth > 0) return fallback;
+    }
+
+    return null;
+  }, []);
+
   // Helper to draw an image to canvas with cover/desktop-bleed
   const drawImageOnCanvas = useCallback((
     ctx: CanvasRenderingContext2D,
     img: HTMLImageElement,
     cW: number,
     cH: number,
-    dpr: number,
     alpha = 1
   ) => {
     const imgW = img.naturalWidth;
     const imgH = img.naturalHeight;
+    if (!imgW || !imgH) return;
     const imgAspect = imgW / imgH;
     const canvasAspect = cW / cH;
 
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    // Mobile / Portrait
+    // Mobile / Portrait: Exactly preserved
     if (canvasAspect <= 0.75) {
       let drawW: number;
       let drawH: number;
@@ -298,15 +379,8 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
 
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
     } else {
-      // Desktop: Ambient motion background + Centered full-height hero
-      ctx.save();
-      ctx.filter = 'blur(35px) brightness(0.32) saturate(1.35)';
-      const bgW = cW;
-      const bgH = cW / imgAspect;
-      const bgX = 0;
-      const bgY = (cH - bgH) / 2;
-      ctx.drawImage(img, bgX, bgY, bgW, bgH);
-      ctx.restore();
+      // Desktop: Centered full-height hero with cinematic vignette
+      // Ambient background blur is offloaded to GPU CSS layer (eliminates 40ms CPU canvas blur stall!)
 
       // Cinematic Vignette
       const radialGrad = ctx.createRadialGradient(
@@ -325,11 +399,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
       const fgX = (cW - fgW) / 2;
       const fgY = (cH - fgH) / 2;
 
-      ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-      ctx.shadowBlur = 45 * dpr;
       ctx.drawImage(img, fgX, fgY, fgW, fgH);
-      ctx.restore();
     }
 
     ctx.restore();
@@ -347,7 +417,9 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Responsive DPR: mobile up to 2, desktop capped at 1.25 for 60-120fps GPU performance
+    const isMobile = window.innerWidth <= 768;
+    const dpr = isMobile ? Math.min(window.devicePixelRatio || 1, 2) : Math.min(window.devicePixelRatio || 1, 1.25);
     const winW = window.innerWidth;
     const winH = window.innerHeight;
     const targetW = Math.round(winW * dpr);
@@ -362,44 +434,158 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     const cH = canvas.height;
     ctx.clearRect(0, 0, cW, cH);
 
-    // Sequence 1 Image
-    let imgOne = cacheOneRef.current[idxOne];
-    if (!imgOne || !imgOne.complete || imgOne.naturalWidth === 0) {
-      for (const loaded of loadedOneRef.current) {
-        imgOne = cacheOneRef.current[loaded];
-        break;
-      }
+    // Sequence 1 Image: safely resolved with fallback
+    const imgOne = getBestAvailableImage(
+      cacheOneRef.current,
+      idxOne,
+      lastRenderedOneRef.current,
+      openingConfig.totalFrames
+    );
+    if (imgOne) {
+      lastRenderedOneRef.current = imgOne;
     }
 
-    // Sequence 2 Image
-    let imgTwo = cacheTwoRef.current[idxTwo];
-    if (!imgTwo || !imgTwo.complete || imgTwo.naturalWidth === 0) {
-      for (const loaded of loadedTwoRef.current) {
-        imgTwo = cacheTwoRef.current[loaded];
-        break;
-      }
+    // Sequence 2 Image: safely resolved with fallback
+    const imgTwo = getBestAvailableImage(
+      cacheTwoRef.current,
+      idxTwo,
+      lastRenderedTwoRef.current,
+      mainConfig.totalFrames
+    );
+    if (imgTwo) {
+      lastRenderedTwoRef.current = imgTwo;
+    }
+
+    // Sync ambient background image on desktop (GPU CSS compositor handles blur at 60fps)
+    const activeImg = stage === 'opening'
+      ? imgOne
+      : stage === 'main'
+      ? imgTwo
+      : (transitionRatio > 0.5 ? imgTwo : imgOne);
+
+    if (bgImgRef.current && activeImg && activeImg.src && bgImgRef.current.src !== activeImg.src) {
+      bgImgRef.current.src = activeImg.src;
     }
 
     if (stage === 'opening' && imgOne && imgOne.complete && imgOne.naturalWidth > 0) {
-      drawImageOnCanvas(ctx, imgOne, cW, cH, dpr, 1);
+      drawImageOnCanvas(ctx, imgOne, cW, cH, 1);
     } else if (stage === 'main' && imgTwo && imgTwo.complete && imgTwo.naturalWidth > 0) {
-      drawImageOnCanvas(ctx, imgTwo, cW, cH, dpr, 1);
+      drawImageOnCanvas(ctx, imgTwo, cW, cH, 1);
     } else if (stage === 'transition') {
       // Smooth cinematic crossfade between the final frame of Sequence 1 and first frame of Sequence 2
       if (imgOne && imgOne.complete && imgOne.naturalWidth > 0) {
-        drawImageOnCanvas(ctx, imgOne, cW, cH, dpr, Math.max(0, 1 - transitionRatio));
+        drawImageOnCanvas(ctx, imgOne, cW, cH, Math.max(0, 1 - transitionRatio));
       }
       if (imgTwo && imgTwo.complete && imgTwo.naturalWidth > 0) {
-        drawImageOnCanvas(ctx, imgTwo, cW, cH, dpr, Math.min(1, transitionRatio));
+        drawImageOnCanvas(ctx, imgTwo, cW, cH, Math.min(1, transitionRatio));
       }
     }
-  }, [drawImageOnCanvas]);
+  }, [openingConfig.totalFrames, mainConfig.totalFrames, getBestAvailableImage, drawImageOnCanvas]);
 
   // Scroll Handler: Progress calculation, stage mapping, and frame synchronization
   useEffect(() => {
     let rafId: number | null = null;
+    let isScheduled = false;
+    let latestNormalized = 0;
+
     const SPLIT = 0.40; // 40% scroll runway for Frame One, 60% for Frames
     const TRANS_WINDOW = 0.025; // 2.5% crossfade window
+
+    const processScroll = () => {
+      isScheduled = false;
+      const normalized = latestNormalized;
+      setProgress(normalized);
+
+      const direction = normalized >= lastNormalizedRef.current ? 'down' : 'up';
+      lastNormalizedRef.current = normalized;
+
+      if (normalized < SPLIT - TRANS_WINDOW) {
+        // =================================================================
+        // STAGE 1: Frame One (344 frames)
+        // =================================================================
+        setActiveStage('opening');
+        const p1 = normalized / (SPLIT - TRANS_WINDOW);
+        const idx1 = Math.min(
+          openingConfig.totalFrames - 1,
+          Math.max(0, Math.floor(p1 * (openingConfig.totalFrames - 1)))
+        );
+        setFrameIndexOne(idx1);
+
+        // Directional smart preloading buffer for Frame One
+        if (direction === 'down') {
+          for (let o = -6; o <= 26; o++) {
+            const target = idx1 + o;
+            if (target >= 0 && target < openingConfig.totalFrames) {
+              loadFrameOne(target, o >= 0 && o <= 8);
+            }
+          }
+        } else {
+          for (let o = 6; o >= -26; o--) {
+            const target = idx1 + o;
+            if (target >= 0 && target < openingConfig.totalFrames) {
+              loadFrameOne(target, o <= 0 && o >= -8);
+            }
+          }
+        }
+
+        // Preload start of Sequence 2 when approaching transition
+        if (p1 > 0.65) {
+          loadFrameTwo(0, true);
+          loadFrameTwo(1, true);
+          loadFrameTwo(2, true);
+          loadFrameTwo(3, true);
+        }
+
+        renderCanvas('opening', idx1, 0, 0);
+      } else if (normalized <= SPLIT + TRANS_WINDOW) {
+        // =================================================================
+        // TRANSITION: Subtle crossfade between Sequence 1 and Sequence 2
+        // =================================================================
+        setActiveStage('transition');
+        const tRatio = (normalized - (SPLIT - TRANS_WINDOW)) / (TRANS_WINDOW * 2);
+        const idx1 = openingConfig.totalFrames - 1;
+        const idx2 = 0;
+        setFrameIndexOne(idx1);
+        setFrameIndexTwo(idx2);
+
+        loadFrameOne(idx1, true);
+        loadFrameTwo(0, true);
+        loadFrameTwo(1, true);
+        loadFrameTwo(2, true);
+
+        renderCanvas('transition', idx1, idx2, tRatio);
+      } else {
+        // =================================================================
+        // STAGE 2: Frames (442 frames)
+        // =================================================================
+        setActiveStage('main');
+        const p2 = (normalized - (SPLIT + TRANS_WINDOW)) / (1 - (SPLIT + TRANS_WINDOW));
+        const idx2 = Math.min(
+          mainConfig.totalFrames - 1,
+          Math.max(0, Math.floor(p2 * (mainConfig.totalFrames - 1)))
+        );
+        setFrameIndexTwo(idx2);
+
+        // Directional smart preloading buffer for Frames
+        if (direction === 'down') {
+          for (let o = -6; o <= 28; o++) {
+            const target = idx2 + o;
+            if (target >= 0 && target < mainConfig.totalFrames) {
+              loadFrameTwo(target, o >= 0 && o <= 8);
+            }
+          }
+        } else {
+          for (let o = 6; o >= -28; o--) {
+            const target = idx2 + o;
+            if (target >= 0 && target < mainConfig.totalFrames) {
+              loadFrameTwo(target, o <= 0 && o >= -8);
+            }
+          }
+        }
+
+        renderCanvas('main', openingConfig.totalFrames - 1, idx2, 1);
+      }
+    };
 
     const handleScroll = () => {
       if (!containerRef.current) return;
@@ -408,79 +594,12 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
       if (totalScrollable <= 0) return;
 
       const currentScroll = -rect.top;
-      const normalized = Math.max(0, Math.min(1, currentScroll / totalScrollable));
+      latestNormalized = Math.max(0, Math.min(1, currentScroll / totalScrollable));
 
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        setProgress(normalized);
-
-        if (normalized < SPLIT - TRANS_WINDOW) {
-          // =================================================================
-          // STAGE 1: Frame One (344 frames)
-          // =================================================================
-          setActiveStage('opening');
-          const p1 = normalized / (SPLIT - TRANS_WINDOW);
-          const idx1 = Math.min(
-            openingConfig.totalFrames - 1,
-            Math.max(0, Math.floor(p1 * (openingConfig.totalFrames - 1)))
-          );
-          setFrameIndexOne(idx1);
-
-          // Priority buffer for Frame One
-          for (let o = -5; o <= 20; o++) {
-            const target = idx1 + o;
-            if (target >= 0 && target < openingConfig.totalFrames) {
-              loadFrameOne(target, true);
-            }
-          }
-
-          // Preload start of Sequence 2 when approaching transition
-          if (p1 > 0.7) {
-            loadFrameTwo(0, true);
-            loadFrameTwo(1, true);
-            loadFrameTwo(2, true);
-          }
-
-          renderCanvas('opening', idx1, 0, 0);
-        } else if (normalized <= SPLIT + TRANS_WINDOW) {
-          // =================================================================
-          // TRANSITION: Subtle crossfade between Sequence 1 and Sequence 2
-          // =================================================================
-          setActiveStage('transition');
-          const tRatio = (normalized - (SPLIT - TRANS_WINDOW)) / (TRANS_WINDOW * 2);
-          const idx1 = openingConfig.totalFrames - 1;
-          const idx2 = 0;
-          setFrameIndexOne(idx1);
-          setFrameIndexTwo(idx2);
-
-          loadFrameOne(idx1, true);
-          loadFrameTwo(0, true);
-          loadFrameTwo(1, true);
-
-          renderCanvas('transition', idx1, idx2, tRatio);
-        } else {
-          // =================================================================
-          // STAGE 2: Frames (442 frames)
-          // =================================================================
-          setActiveStage('main');
-          const p2 = (normalized - (SPLIT + TRANS_WINDOW)) / (1 - (SPLIT + TRANS_WINDOW));
-          const idx2 = Math.min(
-            mainConfig.totalFrames - 1,
-            Math.max(0, Math.floor(p2 * (mainConfig.totalFrames - 1)))
-          );
-          setFrameIndexTwo(idx2);
-
-          // Priority buffer for Frames
-          for (let o = -5; o <= 22; o++) {
-            const target = idx2 + o;
-            if (target >= 0 && target < mainConfig.totalFrames) {
-              loadFrameTwo(target, true);
-            }
-          }
-
-          renderCanvas('main', openingConfig.totalFrames - 1, idx2, 1);
-        }
-      });
+      if (!isScheduled) {
+        isScheduled = true;
+        rafId = requestAnimationFrame(processScroll);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -534,10 +653,20 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
          ========================================================================= */}
       <div className="fixed inset-0 w-screen h-screen h-[100svh] overflow-hidden z-10 select-none">
         
+        {/* GPU-Accelerated Ambient Motion Background (Desktop wide screens) */}
+        <div className="hidden md:block absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <img
+            ref={bgImgRef}
+            alt=""
+            aria-hidden="true"
+            className="w-full h-full object-cover filter blur-[40px] brightness-[0.32] saturate-[1.35] scale-110 transform-gpu"
+          />
+        </div>
+
         {/* Fullscreen Canvas Renderer */}
         <canvas
           ref={canvasRef}
-          className="w-full h-full block object-cover"
+          className="w-full h-full block object-cover relative z-10"
         />
 
         {/* First Frame Loading Shimmer */}
