@@ -39,7 +39,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     return `${config.framePrefix}${frameNum}${config.frameSuffix}`;
   }, [config.framePrefix, config.frameSuffix]);
 
-  // Canvas drawing routine
+  // Full-bleed responsive canvas drawing routine
   const renderFrameToCanvas = useCallback((targetIndex: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -66,36 +66,93 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
       }
     }
 
-    if (img && img.complete && img.naturalWidth > 0) {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetW = Math.round(rect.width * dpr);
-      const targetH = Math.round(rect.height * dpr);
+    if (!img || !img.complete || img.naturalWidth === 0) return;
 
-      if (canvas.width !== targetW || canvas.height !== targetH) {
-        canvas.width = targetW;
-        canvas.height = targetH;
-      }
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+    const targetW = Math.round(winW * dpr);
+    const targetH = Math.round(winH * dpr);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
 
-      // Aspect cover calculation
-      const imgAspect = img.naturalWidth / img.naturalHeight;
-      const canvasAspect = canvas.width / canvas.height;
-      let drawW = canvas.width;
-      let drawH = canvas.height;
-      let drawX = 0;
-      let drawY = 0;
+    const cW = canvas.width;
+    const cH = canvas.height;
+    const imgW = img.naturalWidth;
+    const imgH = img.naturalHeight;
+    const imgAspect = imgW / imgH; // 0.5625 (9:16)
+    const canvasAspect = cW / cH;
+
+    ctx.clearRect(0, 0, cW, cH);
+
+    // =========================================================================
+    // MOBILE / PORTRAIT SCREENS (canvasAspect <= 0.75)
+    // Direct full-bleed cover filling the entire phone screen seamlessly
+    // =========================================================================
+    if (canvasAspect <= 0.75) {
+      let drawW: number;
+      let drawH: number;
+      let drawX: number;
+      let drawY: number;
 
       if (imgAspect > canvasAspect) {
-        drawW = canvas.height * imgAspect;
-        drawX = (canvas.width - drawW) / 2;
+        drawH = cH;
+        drawW = cH * imgAspect;
+        drawX = (cW - drawW) / 2;
+        drawY = 0;
       } else {
-        drawH = canvas.width / imgAspect;
-        drawY = (canvas.height - drawH) / 2;
+        drawW = cW;
+        drawH = cW / imgAspect;
+        drawX = 0;
+        // Bias slightly upwards so face/headroom is protected on tall mobile screens
+        drawY = (cH - drawH) * 0.35;
       }
 
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    } else {
+      // =======================================================================
+      // DESKTOP & WIDESCREEN LAPTOPS (GTA VI Style Full-Screen Cinematic Canvas)
+      // 1. Ambient blurred motion background covering 100vw x 100vh
+      // 2. Center hero portrait frame scaled to full viewport height
+      // =======================================================================
+      
+      // 1. Ambient Background Layer (Full-Bleed Cover + Soft Cinematic Glow)
+      ctx.save();
+      ctx.filter = 'blur(35px) brightness(0.32) saturate(1.35)';
+      let bgW = cW;
+      let bgH = cW / imgAspect;
+      let bgX = 0;
+      let bgY = (cH - bgH) / 2;
+      ctx.drawImage(img, bgX, bgY, bgW, bgH);
+      ctx.restore();
+
+      // 2. Cinematic Vignette Gradient over ambient layer
+      const radialGrad = ctx.createRadialGradient(
+        cW / 2, cH / 2, cH * 0.25,
+        cW / 2, cH / 2, cW * 0.65
+      );
+      radialGrad.addColorStop(0, 'rgba(18, 7, 14, 0.15)');
+      radialGrad.addColorStop(0.7, 'rgba(18, 7, 14, 0.7)');
+      radialGrad.addColorStop(1, 'rgba(18, 7, 14, 0.95)');
+      ctx.fillStyle = radialGrad;
+      ctx.fillRect(0, 0, cW, cH);
+
+      // 3. Hero Visual Stage (Crisp Portrait Frame Filling Viewport Height)
+      // Height fills 100% of viewport with a subtle grand scale (1.02x)
+      const fgH = cH * 1.02;
+      const fgW = fgH * imgAspect;
+      const fgX = (cW - fgW) / 2;
+      const fgY = (cH - fgH) / 2;
+
+      ctx.save();
+      // Soft ambient drop-shadow around the central subject
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      ctx.shadowBlur = 45 * dpr;
+      ctx.drawImage(img, fgX, fgY, fgW, fgH);
+      ctx.restore();
     }
   }, []);
 
@@ -125,7 +182,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     };
   }, [totalFrames, getFrameUrl, currentFrameIndex, renderFrameToCanvas]);
 
-  // Initial load: Preload first frame immediately + initial buffer
+  // Initial load: Preload first frame immediately + buffer
   useEffect(() => {
     // Priority load frame 0
     loadSingleFrame(0, true);
@@ -135,7 +192,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
       loadSingleFrame(i, true);
     }
 
-    // Load keyframes spread across the reel so seeking is instantaneous
+    // Load keyframes spread across the reel for instant seeking
     for (let i = 30; i < totalFrames; i += 20) {
       loadSingleFrame(i, false);
     }
@@ -176,7 +233,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     };
   }, [loadSingleFrame, totalFrames]);
 
-  // Window resize listener to re-render canvas cleanly
+  // Window resize listener
   useEffect(() => {
     const handleResize = () => {
       renderFrameToCanvas(currentFrameIndex);
@@ -185,7 +242,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     return () => window.removeEventListener('resize', handleResize);
   }, [currentFrameIndex, renderFrameToCanvas]);
 
-  // Scroll handler: Calculate progress and map directly to frame index
+  // Scroll handler: Maps window scroll directly to normalized progress and frame index
   useEffect(() => {
     let rafId: number | null = null;
 
@@ -203,7 +260,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
       rafId = requestAnimationFrame(() => {
         setProgress(normalized);
 
-        // Core formula requested: frameIndex = floor(scrollProgress * (totalFrames - 1))
+        // Core formula: frameIndex = floor(scrollProgress * (totalFrames - 1))
         const frameIdx = Math.min(
           totalFrames - 1,
           Math.max(0, Math.floor(normalized * (totalFrames - 1)))
@@ -212,7 +269,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
         setCurrentFrameIndex(frameIdx);
 
         // Prioritize loading frames surrounding the current frame
-        for (let offset = -5; offset <= 20; offset++) {
+        for (let offset = -6; offset <= 24; offset++) {
           const target = frameIdx + offset;
           if (target >= 0 && target < totalFrames) {
             loadSingleFrame(target, true);
@@ -232,19 +289,19 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
     };
   }, [totalFrames, loadSingleFrame, renderFrameToCanvas]);
 
-  // When first frame is ready, draw it
+  // Draw first frame when ready
   useEffect(() => {
     if (isFirstFrameReady) {
       renderFrameToCanvas(currentFrameIndex);
     }
   }, [isFirstFrameReady, currentFrameIndex, renderFrameToCanvas]);
 
-  // Active cinematic milestone calculation
+  // Active cinematic milestone
   const activeMilestone = config.milestones.find(
     (m) => progress >= m.progressStart && progress <= m.progressEnd
   );
 
-  const isEnding = progress >= 0.97;
+  const isEnding = progress >= 0.95;
   const isIntro = progress < 0.06;
 
   return (
@@ -253,149 +310,137 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
       className="relative w-full bg-[#12070E] text-[#FFF9F5] selection:bg-[#F7C8D9] selection:text-[#75445C] overflow-x-hidden"
       style={{ height: config.scrollDistance || '600vh' }}
     >
-      {/* Dreamy Romantic Atmospheric Glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[20%] left-[25%] w-[45rem] h-[45rem] rounded-full bg-[#D982A5]/12 blur-[130px]" />
-        <div className="absolute bottom-[20%] right-[20%] w-[50rem] h-[50rem] rounded-full bg-[#F7C8D9]/10 blur-[150px]" />
-        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[35rem] h-[35rem] rounded-full bg-[#75445C]/18 blur-[120px]" />
-      </div>
-
-      {/* STICKY CINEMATIC VIEWPORT */}
-      <div className="sticky top-0 h-screen w-full flex flex-col justify-between items-center px-4 sm:px-8 py-5 select-none overflow-hidden">
+      {/* =========================================================================
+          FULL-SCREEN FIXED CINEMATIC STAGE (100vw x 100svh / 100vh)
+          The canvas fills the entire viewport and remains locked during scroll.
+          Zero small cards, zero black boxes, zero blank areas.
+         ========================================================================= */}
+      <div className="fixed inset-0 w-screen h-screen h-[100svh] overflow-hidden z-10 select-none">
         
-        {/* Top Minimal Navigation Bar */}
-        <header className="w-full max-w-7xl flex items-center justify-between z-40">
+        {/* Fullscreen Canvas Renderer */}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full block object-cover"
+        />
+
+        {/* First Frame Loading Shimmer */}
+        {!isFirstFrameReady && (
+          <div className="absolute inset-0 bg-[#12070E] flex flex-col items-center justify-center p-6 text-center z-20">
+            <div className="w-12 h-12 rounded-full border-2 border-[#D982A5] border-t-transparent animate-spin mb-4" />
+            <p className="text-xs text-[#F7C8D9] tracking-widest uppercase">Opening Snehuu's Cinematic Reel...</p>
+          </div>
+        )}
+
+        {/* Ambient Top & Bottom Film Edge Vignette */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#12070E]/70 via-transparent to-[#12070E]/80" />
+
+        {/* Minimal Floating Top Header */}
+        <header className="absolute top-0 left-0 right-0 p-4 sm:p-6 md:p-8 flex items-center justify-between z-40 pointer-events-auto">
           <button
             onClick={onReturn}
-            className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium text-white transition-all shadow-md cursor-pointer active:scale-95"
+            className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-xl border border-white/20 text-xs sm:text-sm font-medium text-white transition-all shadow-xl cursor-pointer active:scale-95"
             title="Return to birthday page"
           >
             <ArrowLeft className="w-4 h-4 text-[#F7C8D9] group-hover:-translate-x-1 transition-transform" />
             <span>Birthday Page</span>
           </button>
 
-          {/* Center Title Badge */}
-          <div className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-xs text-[#F7C8D9] font-medium tracking-wider uppercase">
+          {/* Center Title */}
+          <div className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/35 backdrop-blur-xl border border-white/15 text-xs text-[#F7C8D9] font-medium tracking-wider uppercase">
             <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />
-            <span>Snehuu's Velocity Reel</span>
+            <span>Snehuu's Cinematic Reel</span>
             <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
           </div>
 
-          {/* Progress & Frame Counter Pill */}
+          {/* Progress & Frame Counter */}
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
+            <div className="px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
               Frame {currentFrameIndex + 1} / {totalFrames}
             </div>
-            <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
+            <div className="px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 text-[11px] font-semibold text-[#F7C8D9] tracking-wider text-center">
               {Math.round(progress * 100)}%
             </div>
           </div>
         </header>
 
         {/* =========================================================================
-            CENTRAL CINEMATIC STAGE: Centered Portrait Canvas + Overlapping Text
+            CINEMATIC TEXT OVERLAYS: LEFT <-> RIGHT (GTA VI Style)
+            Rendered directly over the moving frames with film title typography
            ========================================================================= */}
-        <div className="relative w-full max-w-7xl mx-auto flex-1 flex items-center justify-center my-auto z-20">
-          
-          {/* Ambient Glow Behind Portrait Animation */}
-          <div className="absolute w-[320px] sm:w-[420px] md:w-[460px] h-[550px] sm:h-[680px] bg-gradient-to-tr from-[#D982A5]/30 via-[#F7C8D9]/20 to-[#75445C]/35 rounded-[3rem] blur-3xl pointer-events-none -z-10" />
-
-          {/* Central Portrait Canvas Container */}
-          <div className="relative rounded-[2rem] overflow-hidden border-2 border-white/25 shadow-[0_25px_70px_-15px_rgba(217,130,165,0.45)] bg-[#0A0307] aspect-[9/16] h-[64vh] sm:h-[72vh] md:h-[78vh] max-h-[820px] w-auto flex items-center justify-center">
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full object-cover select-none pointer-events-none"
-            />
-
-            {!isFirstFrameReady && (
-              <div className="absolute inset-0 bg-[#12070E] flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-12 h-12 rounded-full border-2 border-[#D982A5] border-t-transparent animate-spin mb-4" />
-                <p className="text-xs text-[#F7C8D9] tracking-widest uppercase">Unfolding Snehuu's dance reel...</p>
-              </div>
-            )}
-          </div>
-
-          {/* =======================================================================
-              CINEMATIC TEXT OVERLAYS: LEFT, RIGHT, LEFT, RIGHT
-              Partially overlapping the central portrait canvas like cinema subtitles
-             ======================================================================= */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
-            <AnimatePresence mode="wait">
-              {activeMilestone && !isEnding && (
-                <motion.div
-                  key={activeMilestone.id}
-                  initial={
-                    reducedMotion
-                      ? { opacity: 0 }
-                      : activeMilestone.side === 'left'
-                      ? { opacity: 0, x: -60, y: 15 }
-                      : { opacity: 0, x: 60, y: 15 }
-                  }
-                  animate={
-                    reducedMotion
-                      ? { opacity: 1 }
-                      : { opacity: 1, x: 0, y: 0 }
-                  }
-                  exit={
-                    reducedMotion
-                      ? { opacity: 0 }
-                      : activeMilestone.side === 'left'
-                      ? { opacity: 0, x: -40, y: -15 }
-                      : { opacity: 0, x: 40, y: -15 }
-                  }
-                  transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                  className={`absolute w-full px-4 sm:px-8 max-w-6xl flex ${
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30 px-4 sm:px-8 md:px-16 lg:px-24">
+          <AnimatePresence mode="wait">
+            {activeMilestone && !isEnding && (
+              <motion.div
+                key={activeMilestone.id}
+                initial={
+                  reducedMotion
+                    ? { opacity: 0 }
+                    : activeMilestone.side === 'left'
+                    ? { opacity: 0, x: -70 }
+                    : { opacity: 0, x: 70 }
+                }
+                animate={
+                  reducedMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, x: 0 }
+                }
+                exit={
+                  reducedMotion
+                    ? { opacity: 0 }
+                    : activeMilestone.side === 'left'
+                    ? { opacity: 0, x: -50 }
+                    : { opacity: 0, x: 50 }
+                }
+                transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                className={`w-full max-w-7xl flex ${
+                  activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
+                }`}
+              >
+                {/* Cinema Overlay Container: Overlaps the visual with grand typography */}
+                <div
+                  className={`max-w-md sm:max-w-lg lg:max-w-2xl p-6 sm:p-8 md:p-10 rounded-3xl backdrop-blur-2xl border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.85)] ${
                     activeMilestone.side === 'left'
-                      ? 'justify-start'
-                      : 'justify-end'
+                      ? 'bg-gradient-to-r from-black/85 via-black/70 to-transparent text-left'
+                      : 'bg-gradient-to-l from-black/85 via-black/70 to-transparent text-right'
                   }`}
                 >
-                  {/* The Glassmorphic Text Card with Soft Backdrop for Flawless Readability */}
+                  {/* Moment Subtitle */}
                   <div
-                    className={`max-w-md sm:max-w-lg lg:max-w-xl p-5 sm:p-7 md:p-8 rounded-3xl backdrop-blur-xl border border-white/25 shadow-2xl ${
-                      activeMilestone.side === 'left'
-                        ? 'bg-gradient-to-r from-[#140810]/92 via-[#1E0B19]/85 to-[#140810]/60 text-left -ml-2 sm:ml-4 lg:ml-12'
-                        : 'bg-gradient-to-l from-[#140810]/92 via-[#1E0B19]/85 to-[#140810]/60 text-right -mr-2 sm:mr-4 lg:mr-12'
+                    className={`flex items-center gap-2 mb-3 text-xs uppercase tracking-widest text-[#F7C8D9] font-semibold ${
+                      activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
                     }`}
                   >
-                    {/* Moment Badge */}
-                    <div
-                      className={`flex items-center gap-2 mb-3 text-xs uppercase tracking-widest text-[#F7C8D9] font-semibold ${
-                        activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
-                      }`}
-                    >
-                      {activeMilestone.side === 'left' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
-                      <span>{activeMilestone.title}</span>
-                      {activeMilestone.side === 'right' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
-                    </div>
-
-                    {/* Romantic Message Text */}
-                    <p
-                      className="font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-snug sm:leading-relaxed text-white font-medium italic drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
-                      style={{
-                        textShadow: '0 0 24px rgba(247,200,217,0.4), 0 2px 10px rgba(0,0,0,0.85)',
-                      }}
-                    >
-                      "{activeMilestone.text}"
-                    </p>
-
-                    {/* Footer decoration */}
-                    <div
-                      className={`mt-4 pt-3 border-t border-white/15 flex items-center gap-1.5 text-xs text-[#F7C8D9]/80 font-script text-base ${
-                        activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
-                      }`}
-                    >
-                      <Heart className="w-3 h-3 text-[#D982A5] fill-[#D982A5]" />
-                      <span>{activeMilestone.side === 'left' ? 'Forever Yours, Nikhil' : 'My Forever Biwi'}</span>
-                    </div>
+                    {activeMilestone.side === 'left' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
+                    <span>{activeMilestone.title}</span>
+                    {activeMilestone.side === 'right' && <Sparkles className="w-3.5 h-3.5 text-[#D982A5]" />}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+
+                  {/* Large Cinematic Title */}
+                  <h2
+                    className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-white tracking-tight"
+                    style={{
+                      textShadow: '0 0 35px rgba(247,200,217,0.45), 0 4px 16px rgba(0,0,0,0.95)',
+                    }}
+                  >
+                    "{activeMilestone.text}"
+                  </h2>
+
+                  {/* Elegant Signature Stamp */}
+                  <div
+                    className={`mt-5 pt-3 border-t border-white/15 flex items-center gap-2 text-xs text-[#F7C8D9]/90 font-script text-lg ${
+                      activeMilestone.side === 'left' ? 'justify-start' : 'justify-end'
+                    }`}
+                  >
+                    <Heart className="w-3.5 h-3.5 text-[#D982A5] fill-[#D982A5]" />
+                    <span>{activeMilestone.side === 'left' ? 'Forever Yours, Nikhil' : 'My Forever Biwi'}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Gentle Scroll Invitation (Visible at top of section) */}
+        {/* Gentle Scroll Invitation (Only at start) */}
         <AnimatePresence>
           {isIntro && (
             <motion.div
@@ -403,13 +448,13 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.6 }}
-              className="w-full flex flex-col items-center text-center z-30 pb-2 pointer-events-none"
+              className="absolute bottom-8 left-0 right-0 flex flex-col items-center text-center z-30 pointer-events-none"
             >
-              <div className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium text-[#F7C8D9] mb-2 shadow-sm flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5 text-[#D982A5] animate-spin" style={{ animationDuration: '10s' }} />
+              <div className="px-4 py-2 rounded-full bg-black/50 backdrop-blur-xl border border-white/20 text-xs sm:text-sm font-medium text-[#F7C8D9] mb-2 shadow-lg flex items-center gap-2">
+                <Compass className="w-4 h-4 text-[#D982A5] animate-spin" style={{ animationDuration: '10s' }} />
                 <span>{config.invitationText}</span>
               </div>
-              <div className="w-5 h-8 rounded-full border-2 border-white/40 flex justify-center p-1">
+              <div className="w-5 h-8 rounded-full border-2 border-white/50 flex justify-center p-1">
                 <motion.div
                   animate={{ y: [0, 10, 0] }}
                   transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
@@ -421,23 +466,23 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
         </AnimatePresence>
 
         {/* =========================================================================
-            FINAL ENDING REVEAL: Exactly reaches final frame 442, then reveals ending
+            FINAL ENDING REVEAL: Reaches Final Frame 442, Smoothly Overlays Screen
            ========================================================================= */}
         <AnimatePresence>
           {isEnding && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
+              exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.6 }}
-              className="absolute inset-0 bg-[#12070E]/94 backdrop-blur-2xl z-50 flex flex-col items-center justify-center p-6 text-center overflow-y-auto"
+              className="absolute inset-0 bg-[#12070E]/92 backdrop-blur-2xl z-50 flex flex-col items-center justify-center p-6 text-center overflow-y-auto pointer-events-auto"
             >
-              {/* Floating Heart with Pulse */}
+              {/* Floating Glowing Heart */}
               <div className="relative mb-6">
                 <motion.div
                   animate={{ scale: [1, 1.08, 1] }}
                   transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-[#D982A5] to-[#F7C8D9] flex items-center justify-center shadow-[0_0_50px_rgba(217,130,165,0.7)]"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-[#D982A5] to-[#F7C8D9] flex items-center justify-center shadow-[0_0_55px_rgba(217,130,165,0.7)]"
                 >
                   <Heart className="w-10 h-10 sm:w-12 sm:h-12 fill-white text-white" />
                 </motion.div>
@@ -458,7 +503,7 @@ export const CinematicSurprise: React.FC<CinematicSurpriseProps> = ({ onReturn }
 
               <button
                 onClick={onReturn}
-                className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#D982A5] to-[#F7C8D9] hover:from-[#C46D91] hover:to-[#EAAEC3] text-[#2A1722] font-semibold text-sm sm:text-base tracking-wide shadow-xl hover:shadow-[0_0_35px_rgba(217,130,165,0.6)] hover:scale-105 transition-all flex items-center gap-2 group cursor-pointer active:scale-95"
+                className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#D982A5] to-[#F7C8D9] hover:from-[#C46D91] hover:to-[#EAAEC3] text-[#2A1722] font-semibold text-sm sm:text-base tracking-wide shadow-2xl hover:shadow-[0_0_40px_rgba(217,130,165,0.6)] hover:scale-105 transition-all flex items-center gap-2 group cursor-pointer active:scale-95"
               >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 <span>{config.ending.returnButtonText}</span>
